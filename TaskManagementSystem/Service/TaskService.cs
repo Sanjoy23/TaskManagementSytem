@@ -34,7 +34,6 @@ namespace TaskManagementSystem.Service
         public async Task<ModelTask> CreateTaskAsync(ModelTask task)
         {
             var created = await _taskRepository.AddAsync(task);
-            await _taskRepository.SaveChangesAsync();
             return created;
         }
 

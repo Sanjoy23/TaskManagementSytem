@@ -86,6 +86,7 @@ namespace TaskManagementSystem.Repository
         public async Task<ModelTask> AddAsync(ModelTask task)
         {
             await _context.Tasks.AddAsync(task);
+            await _context.SaveChangesAsync();
             return task;
         }
 

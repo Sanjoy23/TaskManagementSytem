@@ -20,6 +20,7 @@ namespace TaskManagementSystem.Utilities
             }
             catch (Exception ex)
             {
+                Log.Error(ex.Message, ex);
                 await HandleExceptionAsync(httpContext, ex);
             }
 

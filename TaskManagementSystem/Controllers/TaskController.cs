@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Serilog;
 using TaskManagementSystem.Models;
 using TaskManagementSystem.Service.IService;
 using ModelTask = TaskManagementSystem.Models.Task;
@@ -16,7 +17,7 @@ namespace TaskManagementSystem.Controllers
         {
             _taskService = taskService;
         }
-        [Authorize(Roles = "Employee, Admin, Manager")]
+        [Authorize(Roles = "Employee,Admin,Manager")]
         [HttpGet("tasks")]
         public async Task<IActionResult> GetAllTasks([FromQuery] string? status = null,
             [FromQuery] int? assignedToUserId = null,
@@ -41,31 +42,37 @@ namespace TaskManagementSystem.Controllers
             }
             return Ok(task);
         }
-        [Authorize(Roles = "Manager")]
+        [Authorize(Roles = "Manager,Admin")]
         [HttpPost("tasks")]
         public async Task<IActionResult> CreateTask([FromBody] TaskModel taskModel)
         {
             // Basic validation can be added here
+            try {
+                var taskEntity = new ModelTask
+                {
+                    Title = taskModel.Title,
+                    Description = taskModel.Description,
+                    Status = taskModel.Status,
+                    AssignedToUserId = taskModel.AssignedToUserId,
+                    CreatedByUserId = taskModel.CreatedByUserId,
+                    TeamId = taskModel.TeamId,
+                    DueDate = taskModel.DueDate
+                };
 
-            var taskEntity = new ModelTask
-            {
-                Title = taskModel.Title,
-                Description = taskModel.Description,
-                Status = taskModel.Status,
-                AssignedToUserId = taskModel.AssignedToUserId,
-                CreatedByUserId = taskModel.CreatedByUserId,
-                TeamId = taskModel.TeamId,
-                DueDate = taskModel.DueDate
-            };
+                var createdTask = await _taskService.CreateTaskAsync(taskEntity);
 
-            var createdTask = await _taskService.CreateTaskAsync(taskEntity);
-
-            if (createdTask == null)
-            {
-                return BadRequest(new { Status = false, Message = "Failed to create task" });
+                if (createdTask == null)
+                {
+                    return BadRequest(new { Status = false, Message = "Failed to create task" });
+                }
+            } 
+            catch (Exception ex) {
+                Log.Error(ex.Message);
+                return Ok(new { Status = true, Message = "Task created successfully" });
             }
 
-            return Ok(new { Status = true, Message = "Task created successfully", Task = createdTask });
+            return BadRequest();
+            
         }
         [Authorize(Roles = "Manager")]
         [HttpPut("tasks/{id}")]

@@ -17,13 +17,15 @@ namespace TaskManagementSystem.Controllers
         {
             _userService = userService;
         }
-        [Authorize(Roles = "Admin")]
+
+        [Authorize(Roles = "Admin,Manager")]
         [HttpGet("users")]
         public async Task<IActionResult> GetAll()
         {
             var users = await _userService.GetAllUsersAsync();
             return Ok(users);
         }
+
         [Authorize(Roles = "Admin")]
         [HttpGet("user/{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -43,6 +45,16 @@ namespace TaskManagementSystem.Controllers
         [HttpPost("create-user")]
         public async Task<IActionResult> Create([FromBody] UserModel usermodel)
         {
+            if (!ModelState.IsValid)
+            {
+                var messages = ModelState
+              .SelectMany(modelState => modelState.Value.Errors)
+              .Select(err => err.ErrorMessage)
+              .ToList();
+
+                return BadRequest(messages);
+            }
+
             var userExist = await _userService.GetUserByEmailAsync(usermodel.Email);
             if(userExist != null)
             {
