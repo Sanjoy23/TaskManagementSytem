@@ -2,8 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
 using TaskManagementSystem.Models;
+using TaskManagementSystem.Models.DTOs;
+using TaskManagementSystem.Models.ResponseDtos;
 using TaskManagementSystem.Service.IService;
-using ModelTask = TaskManagementSystem.Models.Task;
 
 namespace TaskManagementSystem.Controllers
 {
@@ -17,6 +18,7 @@ namespace TaskManagementSystem.Controllers
         {
             _taskService = taskService;
         }
+
         [Authorize(Roles = "Employee,Admin,Manager")]
         [HttpGet("tasks")]
         public async Task<IActionResult> GetAllTasks([FromQuery] string? status = null,
@@ -42,13 +44,21 @@ namespace TaskManagementSystem.Controllers
             }
             return Ok(task);
         }
+
         [Authorize(Roles = "Manager,Admin")]
         [HttpPost("tasks")]
         public async Task<IActionResult> CreateTask([FromBody] TaskModel taskModel)
         {
-            // Basic validation can be added here
+            
+            var taskExist = _taskService.GetTaskByTitleAsync(taskModel.Title);
+            if (taskExist != null) return BadRequest(new UserResponse
+            {
+                Status = false,
+                Message = "Same Task is created already"
+            });
+
             try {
-                var taskEntity = new ModelTask
+                var taskEntity = new TaskEntity
                 {
                     Title = taskModel.Title,
                     Description = taskModel.Description,
@@ -65,15 +75,19 @@ namespace TaskManagementSystem.Controllers
                 {
                     return BadRequest(new { Status = false, Message = "Failed to create task" });
                 }
+                return Ok(new UserResponse
+                {
+                    Status = true,
+                    Message = "Successfully Created."
+                });
             } 
             catch (Exception ex) {
                 Log.Error(ex.Message);
                 return Ok(new { Status = true, Message = "Task created successfully" });
             }
-
-            return BadRequest();
             
         }
+
         [Authorize(Roles = "Manager")]
         [HttpPut("tasks/{id}")]
         public async Task<IActionResult> UpdateTask(int id, [FromBody] TaskModel taskModel)
@@ -84,15 +98,19 @@ namespace TaskManagementSystem.Controllers
                 return NotFound(new { Status = false, Message = "Task not found" });
             }
 
-            existingTask.Title = taskModel.Title;
-            existingTask.Description = taskModel.Description;
-            existingTask.Status = taskModel.Status;
-            existingTask.AssignedToUserId = taskModel.AssignedToUserId;
-            existingTask.CreatedByUserId = taskModel.CreatedByUserId;
-            existingTask.TeamId = taskModel.TeamId;
-            existingTask.DueDate = taskModel.DueDate;
+            var taskEntity = new TaskEntity
+            {
+                Id = existingTask.Id,
+                Title = existingTask.Title,
+                Description = existingTask.Description,
+                Status = existingTask.Status,
+                AssignedToUserId = taskModel.AssignedToUserId,
+                CreatedByUserId = taskModel.CreatedByUserId,
+                TeamId = taskModel.TeamId,
+                DueDate = taskModel.DueDate
+            };
 
-            var updatedTask = await _taskService.UpdateTaskAsync(existingTask);
+            var updatedTask = await _taskService.UpdateTaskAsync(taskEntity);
             if (updatedTask == null)
             {
                 return BadRequest(new { Status = false, Message = "Failed to update task" });
@@ -102,7 +120,7 @@ namespace TaskManagementSystem.Controllers
         }
         [Authorize(Roles = "Admin")]
         [HttpDelete("tasks/{id}")]
-        public async System.Threading.Tasks.Task<IActionResult> DeleteTask(int id)
+        public async Task<IActionResult> DeleteTask(int id)
         {
             var existingTask = await _taskService.GetTaskByIdAsync(id);
             if (existingTask == null)
