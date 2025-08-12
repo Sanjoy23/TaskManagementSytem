@@ -49,15 +49,18 @@ namespace TaskManagementSystem.Controllers
         [HttpPost("tasks")]
         public async Task<IActionResult> CreateTask([FromBody] TaskModel taskModel)
         {
-            
-            var taskExist = _taskService.GetTaskByTitleAsync(taskModel.Title);
-            if (taskExist != null) return BadRequest(new UserResponse
+            var taskExist = await _taskService.GetTaskByTitleAsync(taskModel.Title); // Add await
+            if (taskExist != null)
             {
-                Status = false,
-                Message = "Same Task is created already"
-            });
+                return BadRequest(new UserResponse
+                {
+                    Status = false,
+                    Message = "Same Task is created already"
+                });
+            }
 
-            try {
+            try
+            {
                 var taskEntity = new TaskEntity
                 {
                     Title = taskModel.Title,
@@ -73,19 +76,20 @@ namespace TaskManagementSystem.Controllers
 
                 if (createdTask == null)
                 {
-                    return BadRequest(new { Status = false, Message = "Failed to create task" });
+                    return BadRequest(new UserResponse { Status = false, Message = "Failed to create task" });
                 }
+
                 return Ok(new UserResponse
                 {
                     Status = true,
                     Message = "Successfully Created."
                 });
-            } 
-            catch (Exception ex) {
-                Log.Error(ex.Message);
-                return Ok(new { Status = true, Message = "Task created successfully" });
             }
-            
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating task");
+                return StatusCode(500, new UserResponse { Status = false, Message = "Internal server error" });
+            }
         }
 
         [Authorize(Roles = "Manager")]
