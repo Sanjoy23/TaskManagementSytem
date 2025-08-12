@@ -62,6 +62,7 @@ namespace TaskManagementSystem.Service
         public async Task<TaskDto?> GetTaskByIdAsync(int id)
         {
             var task = await _taskRepository.GetByIdAsync(id);
+            if (task == null) return null;
             return new TaskDto
             {
                 Id = task.Id,
