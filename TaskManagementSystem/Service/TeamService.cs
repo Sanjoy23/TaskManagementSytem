@@ -13,41 +13,29 @@ namespace TaskManagementSystem.Service
             _teamRepository = teamRepository;
         }
 
-        public async Task<IEnumerable<Team>> GetAllTeamsAsync()
+        public Task<Team> GetById(int id)
         {
-            return await _teamRepository.GetAllAsync();
+            return _teamRepository.GetById(id);
         }
 
-        public async Task<Team?> GetTeamByIdAsync(int id)
+        public Task<IEnumerable<Team>> GetAll()
         {
-            return await _teamRepository.GetByIdAsync(id);
+            return _teamRepository.GetAll();
         }
 
-        public async Task<Team?> CreateTeamAsync(Team team)
+        public void Add(Team entity)
         {
-            var createdTeam = await _teamRepository.AddAsync(team);
-            await _teamRepository.SaveChangesAsync();
-            return createdTeam;
+            _teamRepository.Add(entity);
         }
 
-        public async Task<Team?> UpdateTeamAsync(Team team)
+        public void Update(Team entity)
         {
-            var updatedTeam = await _teamRepository.UpdateAsync(team);
-            await _teamRepository.SaveChangesAsync();
-            return updatedTeam;
+            _teamRepository.Update(entity);
         }
 
-        public async Task<bool> DeleteTeamAsync(int id)
+        public void Delete(Team entity)
         {
-            var team = await _teamRepository.GetByIdAsync(id);
-            if (team == null)
-                return false;
-
-            await _teamRepository.DeleteAsync(team);
-            await _teamRepository.SaveChangesAsync();
-            return true;
+            _teamRepository.Delete(entity);
         }
-
-
     }
 }

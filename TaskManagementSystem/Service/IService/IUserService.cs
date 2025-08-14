@@ -4,11 +4,12 @@ namespace TaskManagementSystem.Service.IService
 {
     public interface IUserService
     {
+        Task<User> GetById(int id);
+        Task<IEnumerable<User>> GetAll();
+        void Add(User entity);
+        void Update(User entity);
+        void Delete(User entity);
         Task<User?> GetUserByEmailAsync(string email);
-        Task<User?> GetUserByIdAsync(int id);
-        Task<User?> UpdateUserAsync(User user);
-        Task<bool> DeleteUserAsync(int id);
-        Task<User?> CreateUserAsync(User user);
-        Task<IEnumerable<User>> GetAllUsersAsync();
+        
     }
 }

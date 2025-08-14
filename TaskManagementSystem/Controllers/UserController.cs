@@ -22,7 +22,7 @@ namespace TaskManagementSystem.Controllers
         [HttpGet("users")]
         public async Task<IActionResult> GetAll()
         {
-            var users = await _userService.GetAllUsersAsync();
+            var users = await _userService.GetAll();
             return Ok(users);
         }
 
@@ -30,7 +30,7 @@ namespace TaskManagementSystem.Controllers
         [HttpGet("user/{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var user = await _userService.GetUserByIdAsync(id);
+            var user = await _userService.GetById(id);
             if (user == null)
             {
                 return NotFound(new UserResponse
@@ -52,11 +52,15 @@ namespace TaskManagementSystem.Controllers
               .Select(err => err.ErrorMessage)
               .ToList();
 
-                return BadRequest(messages);
+                return BadRequest(new UserResponse
+                {
+                    Status = false,
+                    Message = "Bad Request"
+                });
             }
 
             var userExist = await _userService.GetUserByEmailAsync(usermodel.Email);
-            if(userExist != null)
+            if (userExist != null)
             {
                 return BadRequest(new UserResponse
                 {
@@ -72,26 +76,31 @@ namespace TaskManagementSystem.Controllers
                 Role = usermodel.Role
 
             };
-            var result = _userService.CreateUserAsync(user);
-            if (result == null) {
-                Log.Error(result.ToString());
-                return BadRequest(new UserResponse
+            try
+            {
+                _userService.Add(user);
+                return Ok(new UserResponse
                 {
-                    Status = false,
-                    Message = "Internal Server Problem"
+                    Status = true,
+                    Message = "User Creation Completed"
                 });
             }
-            return Ok(new UserResponse
+            catch (Exception ex)
             {
-                Status = true,
-                Message = "User Creation Completed"
-            });
+                Log.Error(ex, ex.Message);
+                return BadRequest(new UserResponse{
+                    Status = false,
+                    Message = ex.Message
+                });
+            }
+            
+            
         }
         [Authorize(Roles = "Admin")]
         [HttpPut("update-user/{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UserModel userModel)
         {
-            var existingUser = await _userService.GetUserByIdAsync(id);
+            var existingUser = await _userService.GetById(id);
             if (existingUser == null)
             {
                 return NotFound(new UserResponse
@@ -101,57 +110,61 @@ namespace TaskManagementSystem.Controllers
                 });
             }
 
-            existingUser.FullName = userModel.FullName == ""? existingUser.FullName : userModel.FullName;
+            existingUser.FullName = userModel.FullName == "" ? existingUser.FullName : userModel.FullName;
             existingUser.Email = userModel.Email == "null" ? existingUser.Email : userModel.Email; ;
             existingUser.Password = userModel.Password == "" ? existingUser.Password : userModel.Password; ;
             existingUser.Role = userModel.Role == "" ? existingUser.Role : userModel.Role; ;
 
-            var updatedUser = await _userService.UpdateUserAsync(existingUser);
-
-            if (updatedUser == null)
+            try
             {
+                _userService.Update(existingUser);
+                return Ok(new UserResponse
+                {
+                    Status = true,
+                    Message = "User updated successfully"
+                });
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
                 return BadRequest(new UserResponse
                 {
                     Status = false,
-                    Message = "Failed to update user"
+                    Message = ex.Message
                 });
             }
-
-            return Ok(new UserResponse
-            {
-                Status = true,
-                Message = "User updated successfully"
-            });
         }
         [Authorize(Roles = "Admin")]
         [HttpDelete("delete-user/{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var existingUser = await _userService.GetUserByIdAsync(id);
+            var existingUser = await _userService.GetById(id);
             if (existingUser == null)
             {
                 return NotFound(new UserResponse
                 {
                     Status = false,
-                    Message = "User not found"
+                    Message = "User not found. Failed to delete."
                 });
             }
-
-            var success = await _userService.DeleteUserAsync(id);
-            if (!success)
+            try
             {
+                _userService.Delete(existingUser);
+                return Ok(new UserResponse
+                {
+                    Status = true,
+                    Message = "User deleted successfully."
+                });
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
                 return BadRequest(new UserResponse
                 {
                     Status = false,
-                    Message = "Failed to delete user"
+                    Message = ex.Message
                 });
             }
-
-            return Ok(new UserResponse
-            {
-                Status = true,
-                Message = "User deleted successfully"
-            });
         }
 
     }

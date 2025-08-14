@@ -12,6 +12,12 @@ namespace TaskManagementSystem.Service.IService
      int? pageSize,
      string? sortBy,
      bool sortDesc);
+
+        Task<TaskEntity> GetById(int id);
+        Task<IEnumerable<TaskEntity>> GetAll();
+        void Add(TaskEntity entity);
+        void Update(TaskUpdateRequestDto entity);
+        void Delete(TaskEntity entity);
         Task<TaskDto?> GetTaskByIdAsync(int id);
         Task<TaskEntity> GetTaskByTitleAsync(string name);
         Task<TaskEntity> CreateTaskAsync(TaskEntity task);

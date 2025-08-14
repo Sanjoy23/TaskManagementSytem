@@ -5,11 +5,11 @@ using TaskManagementSystem.Repository.IRepository;
 
 namespace TaskManagementSystem.Repository
 {
-    public class TaskRepository : ITaskRepository
+    public class TaskRepository : Repository<TaskEntity>, ITaskRepository
     {
         private readonly AppDbContext _context;
 
-        public TaskRepository(AppDbContext context)
+        public TaskRepository(AppDbContext context): base(context)
         {
             _context = context;
         }
@@ -45,14 +45,9 @@ namespace TaskManagementSystem.Repository
             // Sorting — apply only if sortBy provided
             if (!string.IsNullOrEmpty(sortBy))
             {
-                var propertyInfo = typeof(TaskEntity).GetProperty(sortBy);
-                if (propertyInfo != null)
-                {
-                    query = sortDesc
-                        ? query.OrderByDescending(t => propertyInfo.GetValue(t, null))
-                        : query.OrderBy(t => propertyInfo.GetValue(t, null));
-                }
-                // If invalid sortBy, you can skip sorting or throw error. Here we skip sorting.
+                query = sortDesc
+                    ? query.OrderByDescending(e => EF.Property<object>(e, sortBy))
+                    : query.OrderBy(e => EF.Property<object>(e, sortBy));
             }
 
             // Pagination — apply only if both pageNumber and pageSize are provided and > 0

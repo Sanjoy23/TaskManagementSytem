@@ -1,4 +1,5 @@
-﻿using TaskManagementSystem.Models;
+﻿using Serilog;
+using TaskManagementSystem.Models;
 using TaskManagementSystem.Models.DTOs;
 using TaskManagementSystem.Repository.IRepository;
 using TaskManagementSystem.Service.IService;
@@ -146,6 +147,51 @@ namespace TaskManagementSystem.Service
         {
             return await _taskRepository.GetByTitleAsync(name);
             
+        }
+
+        public async Task<TaskEntity> GetById(int id)
+        {
+            return await _taskRepository.GetById(id);
+        }
+
+        public async Task<IEnumerable<TaskEntity>> GetAll()
+        {
+            return await _taskRepository.GetAll();
+        }
+
+        public void Add(TaskEntity entity)
+        {
+            _taskRepository.Add(entity);
+        }
+
+        public void Update(TaskUpdateRequestDto entity)
+        {
+            try
+            {
+                var task = _taskRepository.GetById(entity.Id);
+                if (task == null)
+                {
+                    throw new KeyNotFoundException();
+                }
+                task.Result.Title = entity.Title ?? task.Result.Title;
+                task.Result.Description = entity.Description ?? task.Result.Description;
+                task.Result.AssignedToUserId = entity.AssignedToUserId == 0 ? task.Result.AssignedToUserId : entity.AssignedToUserId;
+                task.Result.CreatedByUserId = entity.CreatedByUserId == 0 ? task.Result.CreatedByUserId : entity.CreatedByUserId;
+                task.Result.DueDate = entity.DueDate;
+                task.Result.TeamId = entity.TeamId == 0 ? task.Result.TeamId : entity.TeamId;
+                task.Result.Status = entity.Status ?? task.Result.Status;
+
+                _taskRepository.Update(task.Result);
+            }
+            catch (Exception ex) {
+                Log.Error(ex, ex.Message);
+                throw;
+            }
+        }
+
+        public void Delete(TaskEntity entity)
+        {
+            _taskRepository.Delete(entity);
         }
     }
 }

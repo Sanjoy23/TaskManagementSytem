@@ -1,7 +1,7 @@
 ﻿using TaskManagementSystem.Models;
 namespace TaskManagementSystem.Repository.IRepository
 {
-    public interface ITaskRepository
+    public interface ITaskRepository : IRepository<TaskEntity>
     {
         Task<PagedResult<TaskEntity>> GetAllAsync(string? status,
             int? assignedToUserId,
