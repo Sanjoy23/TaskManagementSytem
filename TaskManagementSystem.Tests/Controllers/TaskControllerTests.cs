@@ -35,26 +35,14 @@ namespace TaskManagementSystem.Tests.Controllers
                 DueDate = DateTime.UtcNow
             };
 
-            var createdTaskEntity = new TaskEntity
-            {
-                Id = 1,
-                Title = taskModel.Title,
-                Description = taskModel.Description,
-                Status = taskModel.Status,
-                AssignedToUserId = taskModel.AssignedToUserId,
-                CreatedByUserId = taskModel.CreatedByUserId,
-                TeamId = taskModel.TeamId,
-                DueDate = taskModel.DueDate
-            };
-
             // Setup mocks
             _taskServiceMock
-                .Setup(s => s.GetTaskByTitleAsync(It.IsAny<string>()))
+                .Setup(s => s.GetTaskByTitleAsync(taskModel.Title))
                 .ReturnsAsync((TaskEntity?)null); // No existing task
 
             _taskServiceMock
-                .Setup(s => s.CreateTaskAsync(It.IsAny<TaskEntity>()))
-                .ReturnsAsync(createdTaskEntity);
+                .Setup(s => s.Add(It.IsAny<TaskEntity>()))
+                .Verifiable();
 
             // Act
             var result = await _taskController.CreateTask(taskModel);
