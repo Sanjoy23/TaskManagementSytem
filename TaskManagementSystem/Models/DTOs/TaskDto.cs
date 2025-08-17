@@ -1,6 +1,6 @@
-﻿namespace TaskManagementSystem.Models
+﻿namespace TaskManagementSystem.Models.DTOs
 {
-    public class Task
+    public class TaskDto
     {
         public int Id { get; set; }
         public string Title { get; set; } = string.Empty;
@@ -8,13 +8,10 @@
         public string Status { get; set; } = string.Empty;
         public int AssignedToUserId { get; set; }
         public int CreatedByUserId { get; set; }
-
-        public User? AssignedToUser { get; set; }
-        public User? CreatedByUser { get; set; }
-
         public int TeamId { get; set; }
-
-        public Team? Team { get; set; }
         public DateTime DueDate { get; set; }
+        public UserDto? AssignedToUser { get; set; }
+        public UserDto? CreatedByUser { get; set; }
+        public TeamDto? Team { get; set; }
     }
 }

@@ -1,21 +1,27 @@
-﻿using System.Threading.Tasks;
-using TaskManagementSystem.Models;
-using ModelTask = TaskManagementSystem.Models.Task;
+﻿using TaskManagementSystem.Models;
+using TaskManagementSystem.Models.DTOs;
 namespace TaskManagementSystem.Service.IService
 {
     public interface ITaskService
     {
-        Task<PagedResult<ModelTask>> GetAllTasksAsync(string? status,
-    int? assignedToUserId,
-    int? teamId,
-    DateTime? dueDate,
-    int? pageNumber,
-    int? pageSize,
-    string? sortBy,
-    bool sortDesc);
-        Task<ModelTask?> GetTaskByIdAsync(int id);
-        Task<ModelTask> CreateTaskAsync(ModelTask task);
-        Task<ModelTask?> UpdateTaskAsync(ModelTask task);
+        Task<PagedResultDto<TaskDto>> GetAllTasksAsync(string? status,
+     int? assignedToUserId,
+     int? teamId,
+     DateTime? dueDate,
+     int? pageNumber,
+     int? pageSize,
+     string? sortBy,
+     bool sortDesc);
+
+        Task<TaskEntity> GetById(int id);
+        Task<IEnumerable<TaskEntity>> GetAll();
+        void Add(TaskEntity entity);
+        void Update(TaskUpdateRequestDto entity);
+        void Delete(TaskEntity entity);
+        Task<TaskDto?> GetTaskByIdAsync(int id);
+        Task<TaskEntity> GetTaskByTitleAsync(string name);
+        Task<TaskEntity> CreateTaskAsync(TaskEntity task);
+        Task<TaskDto?> UpdateTaskAsync(TaskEntity task);
         Task<bool> DeleteTaskAsync(int id);
     }
 }

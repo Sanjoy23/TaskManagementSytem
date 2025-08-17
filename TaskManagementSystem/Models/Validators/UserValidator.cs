@@ -8,16 +8,16 @@ namespace TaskManagementSystem.Models.Validators
         {
             RuleFor(user => user.FullName)
               .NotEmpty()
-              .WithMessage("First name is required.");
+              .WithMessage("FullName name is required.");
             RuleFor(user => user.Email)
               .EmailAddress()
               .WithMessage("Invalid email address.");
             RuleFor(user => user.Role)
               .NotEmpty()
-              .WithMessage("First name is required.");
+              .WithMessage("Role is required.");
             RuleFor(user => user.Password)
               .NotEmpty()
-              .WithMessage("First name is required.");
+              .WithMessage("Password is required.");
         }
     }
 }
