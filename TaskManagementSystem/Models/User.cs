@@ -10,7 +10,7 @@ namespace TaskManagementSystem.Models
         public string Password { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
 
-        public ICollection<TaskEntity> CreatedTasks { get; set; } = new List<TaskEntity>();
-        public ICollection<TaskEntity> AssignedTasks { get; set; } = new List<TaskEntity>();
+        public ICollection<Task> CreatedTasks { get; set; } = new List<Task>();
+        public ICollection<Task> AssignedTasks { get; set; } = new List<Task>();
     }
 }

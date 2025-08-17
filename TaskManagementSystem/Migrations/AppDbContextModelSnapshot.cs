@@ -22,7 +22,7 @@ namespace TaskManagementSystem.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("TaskManagementSystem.Models.TaskEntity", b =>
+            modelBuilder.Entity("TaskManagementSystem.Models.Task", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -115,7 +115,7 @@ namespace TaskManagementSystem.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("TaskManagementSystem.Models.TaskEntity", b =>
+            modelBuilder.Entity("TaskManagementSystem.Models.Task", b =>
                 {
                     b.HasOne("TaskManagementSystem.Models.User", "AssignedToUser")
                         .WithMany("AssignedTasks")

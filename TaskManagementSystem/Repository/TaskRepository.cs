@@ -2,19 +2,20 @@
 using TaskManagementSystem.Data;
 using TaskManagementSystem.Models;
 using TaskManagementSystem.Repository.IRepository;
+using ModelTask = TaskManagementSystem.Models.Task;
 
 namespace TaskManagementSystem.Repository
 {
-    public class TaskRepository : Repository<TaskEntity>, ITaskRepository
+    public class TaskRepository : ITaskRepository
     {
         private readonly AppDbContext _context;
 
-        public TaskRepository(AppDbContext context): base(context)
+        public TaskRepository(AppDbContext context)
         {
             _context = context;
         }
 
-        public async Task<PagedResult<TaskEntity>> GetAllAsync(string? status,
+        public async Task<PagedResult<ModelTask>> GetAllAsync(string? status,
     int? assignedToUserId,
     int? teamId,
     DateTime? dueDate,
@@ -23,7 +24,7 @@ namespace TaskManagementSystem.Repository
     string? sortBy,
     bool sortDesc)
         {
-            IQueryable<TaskEntity> query = _context.Tasks
+            IQueryable<ModelTask> query = _context.Tasks
         .Include(t => t.AssignedToUser)
         .Include(t => t.CreatedByUser)
         .Include(t => t.Team);
@@ -45,9 +46,14 @@ namespace TaskManagementSystem.Repository
             // Sorting — apply only if sortBy provided
             if (!string.IsNullOrEmpty(sortBy))
             {
-                query = sortDesc
-                    ? query.OrderByDescending(e => EF.Property<object>(e, sortBy))
-                    : query.OrderBy(e => EF.Property<object>(e, sortBy));
+                var propertyInfo = typeof(ModelTask).GetProperty(sortBy);
+                if (propertyInfo != null)
+                {
+                    query = sortDesc
+                        ? query.OrderByDescending(t => propertyInfo.GetValue(t, null))
+                        : query.OrderBy(t => propertyInfo.GetValue(t, null));
+                }
+                // If invalid sortBy, you can skip sorting or throw error. Here we skip sorting.
             }
 
             // Pagination — apply only if both pageNumber and pageSize are provided and > 0
@@ -59,7 +65,7 @@ namespace TaskManagementSystem.Repository
 
             var items = await query.ToListAsync();
 
-            return new PagedResult<TaskEntity>
+            return new PagedResult<ModelTask>
             {
                 CurrentPage = pageNumber ?? 1,
                 PageSize = pageSize ?? items.Count,
@@ -68,7 +74,7 @@ namespace TaskManagementSystem.Repository
             };
         }
 
-        public async Task<TaskEntity?> GetByIdAsync(int id)
+        public async Task<ModelTask?> GetByIdAsync(int id)
         {
             return await _context.Tasks
                 .Include(t => t.AssignedToUser)
@@ -77,34 +83,29 @@ namespace TaskManagementSystem.Repository
                 .FirstOrDefaultAsync(t => t.Id == id);
         }
 
-        public async Task<TaskEntity> AddAsync(TaskEntity task)
+        public async Task<ModelTask> AddAsync(ModelTask task)
         {
             await _context.Tasks.AddAsync(task);
             await _context.SaveChangesAsync();
             return task;
         }
 
-        public async Task SaveChangesAsync()
+        public async System.Threading.Tasks.Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
         }
 
-        public async Task<TaskEntity> UpdateAsync(TaskEntity task)
+        public async Task<ModelTask> UpdateAsync(ModelTask task)
         {
             _context.Tasks.Update(task);
             return task;
         }
 
-        public async Task DeleteAsync(TaskEntity task)
+        public async System.Threading.Tasks.Task DeleteAsync(ModelTask task)
         {
             _context.Tasks.Remove(task);
             await _context.SaveChangesAsync();
 
-        }
-
-        public async Task<TaskEntity?> GetByTitleAsync(string title)
-        {
-            return await _context.Tasks.FirstOrDefaultAsync(t => t.Title == title);
         }
     }
 }

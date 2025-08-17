@@ -12,27 +12,18 @@ namespace TaskManagementSystem.Service
         {
             _userRepository = userRepository;
         }
-        public void Add(User user)
+
+
+
+        public async Task<User> CreateUserAsync(User user)
         {
-            _userRepository.Add(user);
-        }
-        public void Update(User user) { 
-            _userRepository.Update(user);
+            await _userRepository.AddAsync(user);
+            await _userRepository.SaveChangesAsync();
+            return user;
         }
 
-        public async Task<User> GetById(int id)
-        {
-            return await _userRepository.GetById(id);
-        }
-        public void Delete(User user)
-        {
-            _userRepository.Delete(user);
-        }
 
-        public Task<IEnumerable<User>> GetAll()
-        {
-            return _userRepository.GetAll();
-        }
+
         public async Task<User?> GetUserByEmailAsync(string email)
         {
             var user = await _userRepository.GetByEmailAsync(email);
@@ -41,6 +32,36 @@ namespace TaskManagementSystem.Service
                 return null;
             }
             return user;
+
+        }
+
+        public async Task<User?> GetUserByIdAsync(int id)
+        {
+            return await _userRepository.GetByIdAsync(id);
+        }
+
+        public async Task<User?> UpdateUserAsync(User user)
+        {
+            var updatedUser = await _userRepository.UpdateAsync(user);
+            await _userRepository.SaveChangesAsync();
+            return updatedUser;
+        }
+
+        public async Task<bool> DeleteUserAsync(int id)
+        {
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null)
+                return false;
+
+            await _userRepository.DeleteAsync(user);
+            await _userRepository.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<IEnumerable<User>> GetAllUsersAsync()
+        {
+            return await _userRepository.GetAllAsync();
         }
     }
 }
