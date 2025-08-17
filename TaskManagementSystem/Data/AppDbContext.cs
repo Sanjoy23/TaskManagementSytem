@@ -14,7 +14,7 @@ namespace TaskManagementSystem.Data
             base.OnModelCreating(modelBuilder);
 
             // Configure Task entity
-            modelBuilder.Entity<Models.TaskEntity>(entity =>
+            modelBuilder.Entity<Models.Task>(entity =>
             {
                 entity.HasKey(t => t.Id);
 
@@ -43,6 +43,6 @@ namespace TaskManagementSystem.Data
 
         public DbSet<User> Users { get; set; }
         public DbSet<Team> Teams { get; set; }
-        public DbSet<TaskEntity> Tasks { get; set; }
+        public DbSet<Models.Task> Tasks { get; set; }
     }
 }

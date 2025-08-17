@@ -4,10 +4,10 @@ namespace TaskManagementSystem.Service.IService
 {
     public interface ITeamService
     {
-        Task<Team> GetById(int id);
-        Task<IEnumerable<Team>> GetAll();
-        void Add(Team entity);
-        void Update(Team entity);
-        void Delete(Team entity);
+        Task<IEnumerable<Team>> GetAllTeamsAsync();
+        Task<Team?> GetTeamByIdAsync(int id);
+        Task<Team?> UpdateTeamAsync(Team team);
+        Task<Team?> CreateTeamAsync(Team team);
+        Task<bool> DeleteTeamAsync(int id);
     }
 }

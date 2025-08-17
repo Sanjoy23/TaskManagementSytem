@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Serilog;
 using TaskManagementSystem.Models;
 using TaskManagementSystem.Service.IService;
 
@@ -16,47 +15,24 @@ namespace TaskManagementSystem.Controllers
         {
             _teamService = teamService;
         }
-
         [Authorize(Roles = "Admin")]
         [HttpGet("teams")]
         public async Task<IActionResult> GetAllTeams()
         {
-            try
-            {
-                var teams = await _teamService.GetAll();
-                return Ok(teams);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, ex.Message);
-                return BadRequest(new
-                {
-                    Status = false,
-                    Message = ex.Message.ToString()
-                });
-            }
+            var teams = await _teamService.GetAllTeamsAsync();
+            return Ok(teams);
         }
-
         [Authorize(Roles = "Admin")]
         [HttpGet("teams/{id}")]
         public async Task<IActionResult> GetTeamById(int id)
         {
-            try
+            var team = await _teamService.GetTeamByIdAsync(id);
+            if (team == null)
             {
-                var team = await _teamService.GetById(id);
-                return Ok(team);
+                return NotFound(new { Status = false, Message = "Team not found" });
             }
-            catch (Exception ex)
-            {
-                Log.Error(ex, ex.Message);
-                return BadRequest(new
-                {
-                    Status = false,
-                    Message = ex.Message.ToString()
-                });
-            }
+            return Ok(team);
         }
-
         [Authorize(Roles = "Admin")]
         [HttpPost("teams")]
         public async Task<IActionResult> CreateTeam([FromBody] TeamModel teamModel)
@@ -67,76 +43,54 @@ namespace TaskManagementSystem.Controllers
                 Name = teamModel.Name,
                 Description = teamModel.Description
             };
-            try
-            {
-                _teamService.Add(team);
-                return Ok(new { Status = true, Message = "Team created successfully" });
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, ex.Message);
-                return BadRequest(new
-                {
-                    Status = false,
-                    Message = ex.Message.ToString()
-                });
-            }
-        }
 
+            var createdTeam = await _teamService.CreateTeamAsync(team);
+
+            if (createdTeam == null)
+            {
+                return BadRequest(new { Status = false, Message = "Failed to create team" });
+            }
+
+            return Ok(new { Status = true, Message = "Team created successfully", Team = createdTeam });
+        }
         [Authorize(Roles = "Admin")]
         [HttpPut("teams/{id}")]
         public async Task<IActionResult> UpdateTeam(int id, [FromBody] TeamModel teamModel)
         {
-            var existingTeam = await _teamService.GetById(id);
+            var existingTeam = await _teamService.GetTeamByIdAsync(id);
             if (existingTeam == null)
             {
                 return NotFound(new { Status = false, Message = "Team not found" });
             }
 
             existingTeam.Name = teamModel.Name == "" ? existingTeam.Name : teamModel.Name;
-            existingTeam.Description = teamModel.Description == ""
-                                    ? existingTeam.Description : teamModel.Description;
+            existingTeam.Description = teamModel.Description == "" ? existingTeam.Description : teamModel.Description;
 
-            try
+            var updatedTeam = await _teamService.UpdateTeamAsync(existingTeam);
+            if (updatedTeam == null)
             {
-                _teamService.Update(existingTeam);
-                return Ok(new
-                {
-                    Status = true,
-                    Message = "Team updated successfully"
-                });
+                return BadRequest(new { Status = false, Message = "Failed to update team" });
             }
-            catch (Exception ex)
-            {
-                Log.Error(ex, ex.Message);
-                return BadRequest(new
-                {
-                    Status = false,
-                    Message = ex.Message.ToString()
-                });
-            }
+
+            return Ok(new { Status = true, Message = "Team updated successfully", Team = updatedTeam });
         }
-
         [Authorize(Roles = "Admin")]
         [HttpDelete("teams/{id}")]
         public async Task<IActionResult> DeleteTeam(int id)
         {
-            var existingTeam = await _teamService.GetById(id);
+            var existingTeam = await _teamService.GetTeamByIdAsync(id);
             if (existingTeam == null)
             {
                 return NotFound(new { Status = false, Message = "Team not found" });
             }
 
-            try
+            var success = await _teamService.DeleteTeamAsync(id);
+            if (!success)
             {
-                _teamService.Delete(existingTeam);
-                return Ok(new { Status = true, Message = "Team deleted successfully" });
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, ex.Message);
                 return BadRequest(new { Status = false, Message = "Failed to delete team" });
-            }     
+            }
+
+            return Ok(new { Status = true, Message = "Team deleted successfully" });
         }
 
 
