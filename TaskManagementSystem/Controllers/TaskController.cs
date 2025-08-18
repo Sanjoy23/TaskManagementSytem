@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using TaskManagementSystem.Models;
 using TaskManagementSystem.Models.DTOs;
 using TaskManagementSystem.Models.ResponseDtos;
@@ -61,7 +63,7 @@ namespace TaskManagementSystem.Controllers
 
             try
             {
-                
+
                 _taskService.Add(taskModel);
                 return Ok(new
                 {
@@ -82,14 +84,15 @@ namespace TaskManagementSystem.Controllers
 
         [Authorize(Roles = "Manager,Admin")]
         [HttpPut("tasks/{id}")]
-        public  IActionResult UpdateTask(int id, [FromBody] TaskUpdateRequestDto model)
+        public IActionResult UpdateTask(int id, [FromBody] TaskUpdateRequestDto model)
         {
             try
             {
                 _taskService.Update(model);
-                return Ok(new { 
-                    Status = true, 
-                    Message = "Task updated successfully" 
+                return Ok(new
+                {
+                    Status = true,
+                    Message = "Task updated successfully"
                 });
             }
             catch (Exception ex)
@@ -115,6 +118,31 @@ namespace TaskManagementSystem.Controllers
                 {
                     Status = true,
                     Message = "Task is deleted."
+                });
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+                return BadRequest(new
+                {
+                    Status = false,
+                    Message = ex.Message.ToString()
+                });
+            }
+
+        }
+        [Authorize(Roles = "Employee")]
+        [HttpPut("status/")]
+        public IActionResult UpdateStatus(string taskId, string statusId)
+        {
+            try
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                _taskService.UpdateStatus(userId, taskId, statusId);
+                return Ok(new 
+                { 
+                    Status = true,
+                    Message = "Status Changed successfully"
                 });
             }
             catch (Exception ex)

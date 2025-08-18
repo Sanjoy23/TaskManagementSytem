@@ -1,4 +1,5 @@
-﻿using TaskManagementSystem.Models;
+﻿using System.Data;
+using TaskManagementSystem.Models;
 using TaskManagementSystem.Models.DTOs;
 namespace TaskManagementSystem.Service.IService
 {
@@ -20,5 +21,6 @@ namespace TaskManagementSystem.Service.IService
         void Delete(TaskEntity entity);
         Task<TaskDto?> GetTaskByIdAsync(string id);
         Task<TaskEntity> GetTaskByTitleAsync(string name);
+        void UpdateStatus(string userId, string taskId, string statusId);
     }
 }
