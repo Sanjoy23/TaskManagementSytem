@@ -2,13 +2,13 @@
 {
     public class TaskUpdateRequestDto
     {
-        public int Id { get; set; }
+        public string Id { get; set; } = null!;
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public string Status { get; set; } = string.Empty;
-        public int AssignedToUserId { get; set; }
-        public int CreatedByUserId { get; set; }
-        public int TeamId { get; set; }
+        public string StatusId { get; set; } = string.Empty;
+        public string AssignedToUserId { get; set; } = null!;
+        public string CreatedByUserId { get; set; } = null!;
+        public string TeamId { get; set; } = null!;
         public DateTime DueDate { get; set; }
     }
 }

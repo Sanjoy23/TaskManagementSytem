@@ -28,10 +28,10 @@ namespace TaskManagementSystem.Tests.Controllers
             {
                 Title = "Test Task",
                 Description = "Desc",
-                Status = "Open",
-                AssignedToUserId = 5,
-                CreatedByUserId = 3,
-                TeamId = 7,
+                StatusId = "Open",
+                AssignedToUserId = "5",
+                CreatedByUserId = "3",
+                TeamId = "7",
                 DueDate = DateTime.UtcNow
             };
 
@@ -66,16 +66,16 @@ namespace TaskManagementSystem.Tests.Controllers
             {
                 Title = "Existing Task",
                 Description = "Desc",
-                Status = "Open",
-                AssignedToUserId = 5,
-                CreatedByUserId = 3,
-                TeamId = 7,
+                StatusId = "Open",
+                AssignedToUserId = "5",
+                CreatedByUserId = "3",
+                TeamId = "7",
                 DueDate = DateTime.UtcNow
             };
 
             var existingTask = new TaskEntity
             {
-                Id = 1,
+                Id = "1",
                 Title = taskModel.Title
             };
 
@@ -96,7 +96,7 @@ namespace TaskManagementSystem.Tests.Controllers
         public async Task GetTaskById_ShouldReturnOk_WhenTaskExists()
         {
             // Arrange
-            var taskId = 1;
+            var taskId = "1";
             var taskEntity = new TaskDto
             {
                 Id = taskId,

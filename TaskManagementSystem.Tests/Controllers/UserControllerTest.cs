@@ -31,7 +31,7 @@ namespace TaskManagementSystem.Tests.Controllers
                 FullName = "John Doe",
                 Email = "john@example.com",
                 Password = "Password123",
-                Role = "User"
+                RoleId = "User"
             };
             _userServiceMock
                 .Setup(s => s.GetUserByEmailAsync(userModel.Email))
@@ -63,12 +63,12 @@ namespace TaskManagementSystem.Tests.Controllers
                 FullName = "John Doe",
                 Email = "existing@example.com",
                 Password = "Password123",
-                Role = "User"
+                RoleId = "User"
             };
 
             var existingUser = new User
             {
-                Id = 1,
+                Id = "1",
                 Email = "existing@example.com",
                 FullName = "Existing User"
             };

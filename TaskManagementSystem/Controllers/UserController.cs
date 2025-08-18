@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
 using TaskManagementSystem.Models;
@@ -28,7 +29,7 @@ namespace TaskManagementSystem.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpGet("user/{id}")]
-        public async Task<IActionResult> GetById(int id)
+        public async Task<IActionResult> GetById(string id)
         {
             var user = await _userService.GetById(id);
             if (user == null)
@@ -39,7 +40,12 @@ namespace TaskManagementSystem.Controllers
                     Message = "User not found"
                 });
             }
-            return Ok(user);
+            return Ok(new
+            {
+                FullName = user.FullName.ToString(),
+                Email = user.Email.ToString(),
+                RoleName = user.Role?.RoleName.ToString() ?? string.Empty,
+            });
         }
         [Authorize(Roles = "Admin")]
         [HttpPost("create-user")]
@@ -68,14 +74,16 @@ namespace TaskManagementSystem.Controllers
                     Message = "Email already Exist. Please try with another one."
                 });
             }
+            
             var user = new User
             {
                 FullName = usermodel.FullName,
                 Email = usermodel.Email,
-                Password = usermodel.Password,
-                Role = usermodel.Role
+                RoleId = usermodel.RoleId
 
             };
+            var passwordHasher = new PasswordHasher<User>();
+            user.Password = passwordHasher.HashPassword(user, usermodel.Password);
             try
             {
                 _userService.Add(user);
@@ -98,7 +106,7 @@ namespace TaskManagementSystem.Controllers
         }
         [Authorize(Roles = "Admin")]
         [HttpPut("update-user/{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UserModel userModel)
+        public async Task<IActionResult> Update(string id, [FromBody] UserModel userModel)
         {
             var existingUser = await _userService.GetById(id);
             if (existingUser == null)
@@ -109,11 +117,13 @@ namespace TaskManagementSystem.Controllers
                     Message = "User not found"
                 });
             }
+            var passwordHasher = new PasswordHasher<User>();
+            var newPassword = passwordHasher.HashPassword(existingUser, userModel.Password);
 
-            existingUser.FullName = userModel.FullName == "" ? existingUser.FullName : userModel.FullName;
-            existingUser.Email = userModel.Email == "null" ? existingUser.Email : userModel.Email; ;
-            existingUser.Password = userModel.Password == "" ? existingUser.Password : userModel.Password; ;
-            existingUser.Role = userModel.Role == "" ? existingUser.Role : userModel.Role; ;
+            existingUser.FullName = userModel.FullName ?? existingUser.FullName;
+            existingUser.Email = userModel.Email ?? existingUser.Email; 
+            existingUser.Password = newPassword ?? existingUser.Password ; 
+            existingUser.RoleId = userModel.RoleId ?? existingUser.RoleId; 
 
             try
             {
@@ -136,7 +146,7 @@ namespace TaskManagementSystem.Controllers
         }
         [Authorize(Roles = "Admin")]
         [HttpDelete("delete-user/{id}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(string id)
         {
             var existingUser = await _userService.GetById(id);
             if (existingUser == null)

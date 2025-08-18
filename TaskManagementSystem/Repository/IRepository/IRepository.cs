@@ -6,7 +6,7 @@ namespace TaskManagementSystem.Repository.IRepository
     {
         T GetFirstorDefault(Expression<Func<T, bool>> filter, string? includeProperties = null, bool tracked = true);
         IEnumerable<TResult> GetAll<TResult>(Expression<Func<T, bool>>? filter = null, string? includeProperties = null, Expression<Func<T, TResult>>? selector = null, Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null);
-        Task<T> GetById(int id);
+        Task<T> GetById(string id);
         Task<IEnumerable<T>> GetAll();
         void Add(T entity);
         void Update(T entity);
