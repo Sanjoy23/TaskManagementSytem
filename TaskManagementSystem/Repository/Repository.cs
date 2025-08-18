@@ -33,7 +33,7 @@ namespace TaskManagementSystem.Repository
             return await _dbSet.ToListAsync();
         }
 
-        public async Task<T> GetById(int id)
+        public async Task<T> GetById(string id)
         {
             return await _dbSet.FindAsync(id);
         }
@@ -74,7 +74,7 @@ namespace TaskManagementSystem.Repository
             return query.Cast<TResult>().ToList();
         }
 
-        public T GetFirstorDefault(System.Linq.Expressions.Expression<Func<T, bool>> filter, string? includeProperties = null, bool tracked = true)
+        public T GetFirstorDefault(Expression<Func<T, bool>> filter, string? includeProperties = null, bool tracked = true)
         {
             IQueryable<T> query;
 

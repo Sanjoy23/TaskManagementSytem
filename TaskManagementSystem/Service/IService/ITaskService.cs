@@ -5,23 +5,20 @@ namespace TaskManagementSystem.Service.IService
     public interface ITaskService
     {
         Task<PagedResultDto<TaskDto>> GetAllTasksAsync(string? status,
-     int? assignedToUserId,
-     int? teamId,
+     string? assignedToUserId,
+     string? teamId,
      DateTime? dueDate,
      int? pageNumber,
      int? pageSize,
      string? sortBy,
      bool sortDesc);
 
-        Task<TaskEntity> GetById(int id);
+        Task<TaskEntity> GetById(string id);
         Task<IEnumerable<TaskEntity>> GetAll();
-        void Add(TaskEntity entity);
+        void Add(TaskModel entity);
         void Update(TaskUpdateRequestDto entity);
         void Delete(TaskEntity entity);
-        Task<TaskDto?> GetTaskByIdAsync(int id);
+        Task<TaskDto?> GetTaskByIdAsync(string id);
         Task<TaskEntity> GetTaskByTitleAsync(string name);
-        Task<TaskEntity> CreateTaskAsync(TaskEntity task);
-        Task<TaskDto?> UpdateTaskAsync(TaskEntity task);
-        Task<bool> DeleteTaskAsync(int id);
     }
 }

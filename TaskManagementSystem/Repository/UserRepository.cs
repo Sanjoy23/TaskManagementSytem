@@ -17,6 +17,7 @@ namespace TaskManagementSystem.Repository
         public async Task<User> GetByEmailAsync(string email)
         {
             var user = await _context.Users
+                .Include(x => x.Role)
                          .FirstOrDefaultAsync(u => u.Email == email);
             if (user == null) {
                 return null;

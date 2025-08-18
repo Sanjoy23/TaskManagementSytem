@@ -22,8 +22,8 @@ namespace TaskManagementSystem.Controllers
         [Authorize(Roles = "Employee,Admin,Manager")]
         [HttpGet("tasks")]
         public async Task<IActionResult> GetAllTasks([FromQuery] string? status = null,
-            [FromQuery] int? assignedToUserId = null,
-            [FromQuery] int? teamId = null,
+            [FromQuery] string? assignedToUserId = null,
+            [FromQuery] string? teamId = null,
             [FromQuery] DateTime? dueDate = null,
             [FromQuery] int? pageNumber = null,
             [FromQuery] int? pageSize = null,
@@ -35,7 +35,7 @@ namespace TaskManagementSystem.Controllers
         }
 
         [HttpGet("tasks/{id}")]
-        public async Task<IActionResult> GetTaskById(int id)
+        public async Task<IActionResult> GetTaskById(string id)
         {
             var task = await _taskService.GetById(id);
             if (task == null)
@@ -61,18 +61,8 @@ namespace TaskManagementSystem.Controllers
 
             try
             {
-                var taskEntity = new TaskEntity
-                {
-                    Title = taskModel.Title,
-                    Description = taskModel.Description,
-                    Status = taskModel.Status,
-                    AssignedToUserId = taskModel.AssignedToUserId,
-                    CreatedByUserId = taskModel.CreatedByUserId,
-                    TeamId = taskModel.TeamId,
-                    DueDate = taskModel.DueDate
-                };
-
-                _taskService.Add(taskEntity);
+                
+                _taskService.Add(taskModel);
                 return Ok(new
                 {
                     Status = true,
@@ -92,7 +82,7 @@ namespace TaskManagementSystem.Controllers
 
         [Authorize(Roles = "Manager,Admin")]
         [HttpPut("tasks/{id}")]
-        public async Task<IActionResult> UpdateTask(int id, [FromBody] TaskUpdateRequestDto model)
+        public  IActionResult UpdateTask(int id, [FromBody] TaskUpdateRequestDto model)
         {
             try
             {
@@ -110,7 +100,7 @@ namespace TaskManagementSystem.Controllers
         }
         [Authorize(Roles = "Admin")]
         [HttpDelete("tasks/{id}")]
-        public async Task<IActionResult> DeleteTask(int id)
+        public async Task<IActionResult> DeleteTask(string id)
         {
             var existingTask = await _taskService.GetById(id);
             if (existingTask == null)

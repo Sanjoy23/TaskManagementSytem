@@ -13,7 +13,7 @@ namespace TaskManagementSystem.Service
             _teamRepository = teamRepository;
         }
 
-        public Task<Team> GetById(int id)
+        public Task<Team> GetById(string id)
         {
             return _teamRepository.GetById(id);
         }

@@ -39,7 +39,7 @@ namespace TaskManagementSystem.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpGet("teams/{id}")]
-        public async Task<IActionResult> GetTeamById(int id)
+        public async Task<IActionResult> GetTeamById(string id)
         {
             try
             {
@@ -59,11 +59,12 @@ namespace TaskManagementSystem.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPost("teams")]
-        public async Task<IActionResult> CreateTeam([FromBody] TeamModel teamModel)
+        public  IActionResult CreateTeam([FromBody] TeamModel teamModel)
         {
             //var teamExist = await _teamService.GetTeamByNameAsync();
             var team = new Team
             {
+                Id = Guid.NewGuid().ToString(),
                 Name = teamModel.Name,
                 Description = teamModel.Description
             };
@@ -85,7 +86,7 @@ namespace TaskManagementSystem.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPut("teams/{id}")]
-        public async Task<IActionResult> UpdateTeam(int id, [FromBody] TeamModel teamModel)
+        public async Task<IActionResult> UpdateTeam(string id, [FromBody] TeamModel teamModel)
         {
             var existingTeam = await _teamService.GetById(id);
             if (existingTeam == null)
@@ -119,7 +120,7 @@ namespace TaskManagementSystem.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpDelete("teams/{id}")]
-        public async Task<IActionResult> DeleteTeam(int id)
+        public async Task<IActionResult> DeleteTeam(string id)
         {
             var existingTeam = await _teamService.GetById(id);
             if (existingTeam == null)

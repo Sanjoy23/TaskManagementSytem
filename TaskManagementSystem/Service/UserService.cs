@@ -14,13 +14,14 @@ namespace TaskManagementSystem.Service
         }
         public void Add(User user)
         {
+            user.Id = Guid.NewGuid().ToString();
             _userRepository.Add(user);
         }
         public void Update(User user) { 
             _userRepository.Update(user);
         }
 
-        public async Task<User> GetById(int id)
+        public async Task<User> GetById(string id)
         {
             return await _userRepository.GetById(id);
         }

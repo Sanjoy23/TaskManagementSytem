@@ -14,9 +14,9 @@ namespace TaskManagementSystem.Repository
             _context = context;
         }
 
-        public async Task<PagedResult<TaskEntity>> GetAllAsync(string? status,
-    int? assignedToUserId,
-    int? teamId,
+        public async Task<PagedResult<TaskEntity>> GetAllAsync(string? statusId,
+    string? assignedToUserId,
+    string? teamId,
     DateTime? dueDate,
     int? pageNumber,
     int? pageSize,
@@ -27,14 +27,14 @@ namespace TaskManagementSystem.Repository
         .Include(t => t.AssignedToUser)
         .Include(t => t.CreatedByUser)
         .Include(t => t.Team);
-            if (!string.IsNullOrEmpty(status))
-                query = query.Where(t => t.Status == status);
+            if (!string.IsNullOrEmpty(statusId))
+                query = query.Where(t => t.StatusId == statusId);
 
-            if (assignedToUserId.HasValue)
-                query = query.Where(t => t.AssignedToUserId == assignedToUserId.Value);
+            if (!string.IsNullOrEmpty(assignedToUserId))
+                query = query.Where(t => t.AssignedToUserId == assignedToUserId);
 
-            if (teamId.HasValue)
-                query = query.Where(t => t.TeamId == teamId.Value);
+            if (!string.IsNullOrEmpty(teamId))
+                query = query.Where(t => t.TeamId == teamId);
 
             if (dueDate.HasValue)
                 query = query.Where(t => t.DueDate.Date <= dueDate.Value.Date);
@@ -68,7 +68,7 @@ namespace TaskManagementSystem.Repository
             };
         }
 
-        public async Task<TaskEntity?> GetByIdAsync(int id)
+        public async Task<TaskEntity?> GetByIdAsync(string id)
         {
             return await _context.Tasks
                 .Include(t => t.AssignedToUser)

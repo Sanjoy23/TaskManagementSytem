@@ -4,7 +4,7 @@ namespace TaskManagementSystem.Service.IService
 {
     public interface IUserService
     {
-        Task<User> GetById(int id);
+        Task<User> GetById(string id);
         Task<IEnumerable<User>> GetAll();
         void Add(User entity);
         void Update(User entity);

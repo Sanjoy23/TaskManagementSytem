@@ -16,8 +16,8 @@ namespace TaskManagementSystem.Service
         }
 
         public async Task<PagedResultDto<TaskDto>> GetAllTasksAsync(string? status,
-     int? assignedToUserId,
-     int? teamId,
+     string? assignedToUserId,
+     string? teamId,
      DateTime? dueDate,
      int? pageNumber,
      int? pageSize,
@@ -36,7 +36,7 @@ namespace TaskManagementSystem.Service
                     Id = t.Id,
                     Title = t.Title,
                     Description = t.Description,
-                    Status = t.Status,
+                    Status = t.StatusId,
                     AssignedToUserId = t.AssignedToUserId,
                     CreatedByUserId = t.CreatedByUserId,
                     TeamId = t.TeamId,
@@ -60,7 +60,7 @@ namespace TaskManagementSystem.Service
             };
         }
 
-        public async Task<TaskDto?> GetTaskByIdAsync(int id)
+        public async Task<TaskDto?> GetTaskByIdAsync(string id)
         {
             var task = await _taskRepository.GetByIdAsync(id);
             if (task == null) return null;
@@ -69,7 +69,7 @@ namespace TaskManagementSystem.Service
                 Id = task.Id,
                 Title = task.Title, 
                 Description = task.Description, 
-                Status = task.Status,
+                Status = task.StatusId,
                 AssignedToUserId = task.AssignedToUserId,
                 CreatedByUserId = task.CreatedByUserId, 
                 TeamId = task.TeamId,
@@ -93,63 +93,13 @@ namespace TaskManagementSystem.Service
             };
         }
 
-        public async Task<TaskEntity> CreateTaskAsync(TaskEntity task)
-        {
-            var created = await _taskRepository.AddAsync(task);
-            return created;
-        }
-
-        public async Task<TaskDto?> UpdateTaskAsync(TaskEntity task)
-        {
-            var updated = await _taskRepository.UpdateAsync(task);
-            await _taskRepository.SaveChangesAsync();
-            return new TaskDto
-            {
-                Id = task.Id,
-                Title = task.Title,
-                Description = task.Description,
-                Status = task.Status,
-                AssignedToUserId = task.AssignedToUserId,
-                CreatedByUserId = task.CreatedByUserId,
-                TeamId = task.TeamId,
-                DueDate = task.DueDate,
-                AssignedToUser = new UserDto
-                {
-                    Email = task.AssignedToUser.Email,
-                    Name = task.AssignedToUser.FullName
-                },
-                CreatedByUser = new UserDto
-                {
-                    Email = task.CreatedByUser.Email,
-                    Name = task.CreatedByUser.FullName
-                },
-                Team = new TeamDto
-                {
-                    Id = task.Team.Id,
-                    Name = task.Team.Name
-                }
-
-            };
-        }
-
-        public async Task<bool> DeleteTaskAsync(int id)
-        {
-            var task = await _taskRepository.GetByIdAsync(id);
-            if (task == null)
-                return false;
-
-            await _taskRepository.DeleteAsync(task);
-            await _taskRepository.SaveChangesAsync();
-            return true;
-        }
-
         public async Task<TaskEntity> GetTaskByTitleAsync(string name)
         {
             return await _taskRepository.GetByTitleAsync(name);
             
         }
 
-        public async Task<TaskEntity> GetById(int id)
+        public async Task<TaskEntity> GetById(string id)
         {
             return await _taskRepository.GetById(id);
         }
@@ -159,9 +109,20 @@ namespace TaskManagementSystem.Service
             return await _taskRepository.GetAll();
         }
 
-        public void Add(TaskEntity entity)
+        public void Add(TaskModel taskModel)
         {
-            _taskRepository.Add(entity);
+            var taskEntity = new TaskEntity
+            {
+                Id = Guid.NewGuid().ToString(),
+                Title = taskModel.Title,
+                Description = taskModel.Description,
+                StatusId = taskModel.StatusId,
+                AssignedToUserId = taskModel.AssignedToUserId,
+                CreatedByUserId = taskModel.CreatedByUserId,
+                TeamId = taskModel.TeamId,
+                DueDate = taskModel.DueDate
+            };
+            _taskRepository.Add(taskEntity);
         }
 
         public void Update(TaskUpdateRequestDto entity)
@@ -175,11 +136,11 @@ namespace TaskManagementSystem.Service
                 }
                 task.Result.Title = entity.Title ?? task.Result.Title;
                 task.Result.Description = entity.Description ?? task.Result.Description;
-                task.Result.AssignedToUserId = entity.AssignedToUserId == 0 ? task.Result.AssignedToUserId : entity.AssignedToUserId;
-                task.Result.CreatedByUserId = entity.CreatedByUserId == 0 ? task.Result.CreatedByUserId : entity.CreatedByUserId;
+                task.Result.AssignedToUserId = entity.AssignedToUserId ?? task.Result.AssignedToUserId;
+                task.Result.CreatedByUserId = entity.CreatedByUserId  ?? task.Result.CreatedByUserId;
                 task.Result.DueDate = entity.DueDate;
-                task.Result.TeamId = entity.TeamId == 0 ? task.Result.TeamId : entity.TeamId;
-                task.Result.Status = entity.Status ?? task.Result.Status;
+                task.Result.TeamId = entity.TeamId ?? task.Result.TeamId;
+                task.Result.StatusId = entity.StatusId ?? task.Result.StatusId;
 
                 _taskRepository.Update(task.Result);
             }
