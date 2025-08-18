@@ -2,8 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
 using TaskManagementSystem.Models;
+using TaskManagementSystem.Models.DTOs;
+using TaskManagementSystem.Models.ResponseDtos;
 using TaskManagementSystem.Service.IService;
-using ModelTask = TaskManagementSystem.Models.Task;
 
 namespace TaskManagementSystem.Controllers
 {
@@ -17,38 +18,50 @@ namespace TaskManagementSystem.Controllers
         {
             _taskService = taskService;
         }
+
         [Authorize(Roles = "Employee,Admin,Manager")]
         [HttpGet("tasks")]
         public async Task<IActionResult> GetAllTasks([FromQuery] string? status = null,
             [FromQuery] int? assignedToUserId = null,
             [FromQuery] int? teamId = null,
-            [FromQuery] DateTime? dueDate = null,                                                                           
+            [FromQuery] DateTime? dueDate = null,
             [FromQuery] int? pageNumber = null,
             [FromQuery] int? pageSize = null,
             [FromQuery] string? sortBy = null,
             [FromQuery] bool sortDesc = false)
         {
-            var tasks = await _taskService.GetAllTasksAsync(status, assignedToUserId, teamId, dueDate, pageNumber,pageSize,sortBy, sortDesc);
+            var tasks = await _taskService.GetAllTasksAsync(status, assignedToUserId, teamId, dueDate, pageNumber, pageSize, sortBy, sortDesc);
             return Ok(tasks);
         }
 
         [HttpGet("tasks/{id}")]
         public async Task<IActionResult> GetTaskById(int id)
         {
-            var task = await _taskService.GetTaskByIdAsync(id);
+            var task = await _taskService.GetById(id);
             if (task == null)
             {
                 return NotFound(new { Status = false, Message = "Task not found" });
             }
             return Ok(task);
         }
+
         [Authorize(Roles = "Manager,Admin")]
         [HttpPost("tasks")]
         public async Task<IActionResult> CreateTask([FromBody] TaskModel taskModel)
         {
-            // Basic validation can be added here
-            try {
-                var taskEntity = new ModelTask
+            var taskExist = await _taskService.GetTaskByTitleAsync(taskModel.Title); // Add await
+            if (taskExist != null)
+            {
+                return BadRequest(new UserResponse
+                {
+                    Status = false,
+                    Message = "Same Task is created already"
+                });
+            }
+
+            try
+            {
+                var taskEntity = new TaskEntity
                 {
                     Title = taskModel.Title,
                     Description = taskModel.Description,
@@ -59,66 +72,71 @@ namespace TaskManagementSystem.Controllers
                     DueDate = taskModel.DueDate
                 };
 
-                var createdTask = await _taskService.CreateTaskAsync(taskEntity);
-
-                if (createdTask == null)
+                _taskService.Add(taskEntity);
+                return Ok(new
                 {
-                    return BadRequest(new { Status = false, Message = "Failed to create task" });
-                }
-            } 
-            catch (Exception ex) {
-                Log.Error(ex.Message);
-                return Ok(new { Status = true, Message = "Task created successfully" });
+                    Status = true,
+                    Message = "Successfully Created."
+                });
             }
-
-            return BadRequest();
-            
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+                return BadRequest(new
+                {
+                    Status = false,
+                    Message = ex.Message.ToString()
+                });
+            }
         }
-        [Authorize(Roles = "Manager")]
+
+        [Authorize(Roles = "Manager,Admin")]
         [HttpPut("tasks/{id}")]
-        public async Task<IActionResult> UpdateTask(int id, [FromBody] TaskModel taskModel)
+        public async Task<IActionResult> UpdateTask(int id, [FromBody] TaskUpdateRequestDto model)
         {
-            var existingTask = await _taskService.GetTaskByIdAsync(id);
-            if (existingTask == null)
+            try
             {
-                return NotFound(new { Status = false, Message = "Task not found" });
+                _taskService.Update(model);
+                return Ok(new { 
+                    Status = true, 
+                    Message = "Task updated successfully" 
+                });
             }
-
-            existingTask.Title = taskModel.Title;
-            existingTask.Description = taskModel.Description;
-            existingTask.Status = taskModel.Status;
-            existingTask.AssignedToUserId = taskModel.AssignedToUserId;
-            existingTask.CreatedByUserId = taskModel.CreatedByUserId;
-            existingTask.TeamId = taskModel.TeamId;
-            existingTask.DueDate = taskModel.DueDate;
-
-            var updatedTask = await _taskService.UpdateTaskAsync(existingTask);
-            if (updatedTask == null)
+            catch (Exception ex)
             {
+                Log.Error(ex, ex.Message);
                 return BadRequest(new { Status = false, Message = "Failed to update task" });
             }
-
-            return Ok(new { Status = true, Message = "Task updated successfully", Task = updatedTask });
         }
         [Authorize(Roles = "Admin")]
         [HttpDelete("tasks/{id}")]
-        public async System.Threading.Tasks.Task<IActionResult> DeleteTask(int id)
+        public async Task<IActionResult> DeleteTask(int id)
         {
-            var existingTask = await _taskService.GetTaskByIdAsync(id);
+            var existingTask = await _taskService.GetById(id);
             if (existingTask == null)
             {
                 return NotFound(new { Status = false, Message = "Task not found" });
             }
 
-            var success = await _taskService.DeleteTaskAsync(id);
-            if (!success)
+            try
             {
-                return BadRequest(new { Status = false, Message = "Failed to delete task" });
+                _taskService.Delete(existingTask);
+                return Ok(new
+                {
+                    Status = true,
+                    Message = "Task is deleted."
+                });
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+                return BadRequest(new
+                {
+                    Status = false,
+                    Message = ex.Message.ToString()
+                });
             }
 
-            return Ok(new { Status = true, Message = "Task deleted successfully" });
         }
-
-
     }
 }

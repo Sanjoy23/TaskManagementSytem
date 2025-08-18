@@ -1,6 +1,6 @@
-﻿namespace TaskManagementSystem.Models
+﻿namespace TaskManagementSystem.Models.DTOs
 {
-    public class TaskModel
+    public class TaskUpdateRequestDto
     {
         public int Id { get; set; }
         public string Title { get; set; } = string.Empty;
