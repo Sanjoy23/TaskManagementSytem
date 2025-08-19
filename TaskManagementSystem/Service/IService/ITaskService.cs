@@ -1,6 +1,7 @@
-﻿using System.Data;
+﻿using System.Linq.Expressions;
 using TaskManagementSystem.Models;
 using TaskManagementSystem.Models.DTOs;
+using TaskManagementSystem.Models.ResponseDtos;
 namespace TaskManagementSystem.Service.IService
 {
     public interface ITaskService
@@ -16,6 +17,7 @@ namespace TaskManagementSystem.Service.IService
 
         Task<TaskEntity> GetById(string id);
         Task<IEnumerable<TaskEntity>> GetAll();
+        IEnumerable<TaskResponse> GetAllTasks(Expression<Func<TaskEntity, bool>>? filter = null, Func<IQueryable<TaskEntity>, IOrderedQueryable<TaskEntity>>? orderBy = null);
         void Add(TaskModel entity);
         void Update(TaskUpdateRequestDto entity);
         void Delete(TaskEntity entity);

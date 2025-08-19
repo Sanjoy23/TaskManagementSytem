@@ -1,6 +1,9 @@
 ﻿using Serilog;
+using System.Collections;
+using System.Linq.Expressions;
 using TaskManagementSystem.Models;
 using TaskManagementSystem.Models.DTOs;
+using TaskManagementSystem.Models.ResponseDtos;
 using TaskManagementSystem.Repository;
 using TaskManagementSystem.Repository.IRepository;
 using TaskManagementSystem.Service.IService;
@@ -17,6 +20,29 @@ namespace TaskManagementSystem.Service
             _taskRepository = taskRepository;
             _userRepository = userRepository;
         }
+
+        public IEnumerable<TaskResponse> GetAllTasks(
+    Expression<Func<TaskEntity, bool>>? filter = null,
+    Func<IQueryable<TaskEntity>, IOrderedQueryable<TaskEntity>>? orderBy = null)
+        {
+            return _taskRepository.GetAll(
+                filter: filter,
+                includeProperties: "Status,AssignedToUser,CreatedByUser,Team", // eager loading if needed
+                selector: x => new TaskResponse
+                {
+                    Id = x.Id,
+                    Title = x.Title,
+                    Description = x.Description,
+                    StatusId = x.StatusId,
+                    AssignedToUserId = x.AssignedToUserId,
+                    CreatedByUserId = x.CreatedByUserId,
+                    TeamId = x.TeamId,
+                    DueDate = x.DueDate
+                },
+                orderBy: orderBy
+            );
+        }
+
 
         public async Task<PagedResultDto<TaskDto>> GetAllTasksAsync(string? status,
      string? assignedToUserId,
@@ -70,11 +96,11 @@ namespace TaskManagementSystem.Service
             return new TaskDto
             {
                 Id = task.Id,
-                Title = task.Title, 
-                Description = task.Description, 
+                Title = task.Title,
+                Description = task.Description,
                 Status = task.StatusId,
                 AssignedToUserId = task.AssignedToUserId,
-                CreatedByUserId = task.CreatedByUserId, 
+                CreatedByUserId = task.CreatedByUserId,
                 TeamId = task.TeamId,
                 DueDate = task.DueDate,
                 AssignedToUser = new UserDto
@@ -99,7 +125,7 @@ namespace TaskManagementSystem.Service
         public async Task<TaskEntity> GetTaskByTitleAsync(string name)
         {
             return await _taskRepository.GetByTitleAsync(name);
-            
+
         }
 
         public async Task<TaskEntity> GetById(string id)
@@ -140,14 +166,15 @@ namespace TaskManagementSystem.Service
                 task.Result.Title = entity.Title ?? task.Result.Title;
                 task.Result.Description = entity.Description ?? task.Result.Description;
                 task.Result.AssignedToUserId = entity.AssignedToUserId ?? task.Result.AssignedToUserId;
-                task.Result.CreatedByUserId = entity.CreatedByUserId  ?? task.Result.CreatedByUserId;
+                task.Result.CreatedByUserId = entity.CreatedByUserId ?? task.Result.CreatedByUserId;
                 task.Result.DueDate = entity.DueDate;
                 task.Result.TeamId = entity.TeamId ?? task.Result.TeamId;
                 task.Result.StatusId = entity.StatusId ?? task.Result.StatusId;
 
                 _taskRepository.Update(task.Result);
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 Log.Error(ex, ex.Message);
                 throw;
             }
