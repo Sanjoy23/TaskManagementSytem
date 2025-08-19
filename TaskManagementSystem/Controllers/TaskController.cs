@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Serilog;
-using TaskManagementSystem.Models;
+using System.Linq.Expressions;
+using TaskManagementSystem.Features.Tasks.Commands;
 using TaskManagementSystem.Models.DTOs;
-using TaskManagementSystem.Models.ResponseDtos;
+using TaskManagementSystem.Models;
 using TaskManagementSystem.Service.IService;
 
 namespace TaskManagementSystem.Controllers
@@ -13,11 +14,45 @@ namespace TaskManagementSystem.Controllers
     public class TaskController : ControllerBase
     {
         private readonly ITaskService _taskService;
+        private readonly IMediator _mediator;
 
-        public TaskController(ITaskService taskService)
+        public TaskController(ITaskService taskService, IMediator mediator)
         {
             _taskService = taskService;
+            _mediator = mediator;
         }
+
+        [HttpGet("all-tasks")]
+        public IActionResult GetAll([FromQuery] TaskFilterParameters filterParams)
+        {
+            Expression<Func<TaskEntity, bool>>? filter = null;
+
+            if ((filterParams.Statuses != null && filterParams.Statuses.Any()) ||
+                (filterParams.AssignedToUserIds != null && filterParams.AssignedToUserIds.Any()) ||
+                (filterParams.TeamIds != null && filterParams.TeamIds.Any()) ||
+                filterParams.DueDate.HasValue)
+            {
+                filter = t =>
+                    (filterParams.Statuses == null || !filterParams.Statuses.Any() || (t.Status != null && filterParams.Statuses.Contains(t.Status.Name))) &&
+                    (filterParams.AssignedToUserIds == null || !filterParams.AssignedToUserIds.Any() || filterParams.AssignedToUserIds.Contains(t.AssignedToUserId)) &&
+                    (filterParams.TeamIds == null || !filterParams.TeamIds.Any() || (t.Team != null && filterParams.TeamIds.Contains(t.Team.Name))) &&
+                    (!filterParams.DueDate.HasValue || t.DueDate.Date == filterParams.DueDate.Value.Date);
+            }
+
+            var tasks = _taskService.GetAllTasks(
+                filter: filter,
+                orderBy: q => q.OrderByDescending(t => t.DueDate) // example sorting
+            );
+
+            return Ok(new
+            {
+                Status = true,
+                Message = "Tasks retrieved successfully",
+                Result = tasks.ToList()
+            });
+        }
+
+
 
         [Authorize(Roles = "Employee,Admin,Manager")]
         [HttpGet("tasks")]
@@ -34,7 +69,7 @@ namespace TaskManagementSystem.Controllers
             return Ok(tasks);
         }
 
-        [HttpGet("tasks/{id}")]
+        [HttpGet("task/{id}")]
         public async Task<IActionResult> GetTaskById(string id)
         {
             var task = await _taskService.GetById(id);
@@ -46,85 +81,52 @@ namespace TaskManagementSystem.Controllers
         }
 
         [Authorize(Roles = "Manager,Admin")]
-        [HttpPost("tasks")]
-        public async Task<IActionResult> CreateTask([FromBody] TaskModel taskModel)
+        [HttpPost("task")]
+        public async Task<IActionResult> CreateTask([FromBody] CreateTaskCommand command)
         {
-            var taskExist = await _taskService.GetTaskByTitleAsync(taskModel.Title); // Add await
-            if (taskExist != null)
-            {
-                return BadRequest(new UserResponse
-                {
-                    Status = false,
-                    Message = "Same Task is created already"
-                });
-            }
+            var result = await _mediator.Send(command);
 
-            try
+            if (result.Status)
             {
-                
-                _taskService.Add(taskModel);
-                return Ok(new
-                {
-                    Status = true,
-                    Message = "Successfully Created."
-                });
+                return Ok(result);
             }
-            catch (Exception ex)
+            else
             {
-                Log.Error(ex, ex.Message);
-                return BadRequest(new
-                {
-                    Status = false,
-                    Message = ex.Message.ToString()
-                });
+                return BadRequest(result);
             }
         }
 
         [Authorize(Roles = "Manager,Admin")]
-        [HttpPut("tasks/{id}")]
-        public  IActionResult UpdateTask(int id, [FromBody] TaskUpdateRequestDto model)
+        [HttpPut("task/{id}")]
+        public  async Task<IActionResult> UpdateTask(string id, [FromBody] UpdateTaskCommand model)
         {
-            try
+            if (model.Id != id.ToString())
             {
-                _taskService.Update(model);
-                return Ok(new { 
-                    Status = true, 
-                    Message = "Task updated successfully" 
-                });
+                return BadRequest(new { Status = false, Message = "Route ID doesn't match model ID" });
             }
-            catch (Exception ex)
+            var result = await _mediator.Send(model);
+            if (result.Status)
             {
-                Log.Error(ex, ex.Message);
-                return BadRequest(new { Status = false, Message = "Failed to update task" });
+                return Ok(result);
+            }
+            else
+            {
+                return BadRequest(result);
             }
         }
         [Authorize(Roles = "Admin")]
-        [HttpDelete("tasks/{id}")]
+        [HttpDelete("task/{id}")]
         public async Task<IActionResult> DeleteTask(string id)
         {
-            var existingTask = await _taskService.GetById(id);
-            if (existingTask == null)
-            {
-                return NotFound(new { Status = false, Message = "Task not found" });
-            }
+            var result = await _mediator.Send(new DeleteTaskCommand { TaskId = id });
 
-            try
+            if (result.Status)
             {
-                _taskService.Delete(existingTask);
-                return Ok(new
-                {
-                    Status = true,
-                    Message = "Task is deleted."
-                });
+                return Ok(result);
             }
-            catch (Exception ex)
+            else
             {
-                Log.Error(ex, ex.Message);
-                return BadRequest(new
-                {
-                    Status = false,
-                    Message = ex.Message.ToString()
-                });
+                return NotFound(result);
             }
 
         }
