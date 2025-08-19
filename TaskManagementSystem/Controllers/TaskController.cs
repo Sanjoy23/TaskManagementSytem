@@ -130,5 +130,30 @@ namespace TaskManagementSystem.Controllers
             }
 
         }
+        [Authorize(Roles = "Employee")]
+        [HttpPut("status/")]
+        public IActionResult UpdateStatus(string taskId, string statusId)
+        {
+            try
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                _taskService.UpdateStatus(userId, taskId, statusId);
+                return Ok(new 
+                { 
+                    Status = true,
+                    Message = "Status Changed successfully"
+                });
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+                return BadRequest(new
+                {
+                    Status = false,
+                    Message = ex.Message.ToString()
+                });
+            }
+
+        }
     }
 }

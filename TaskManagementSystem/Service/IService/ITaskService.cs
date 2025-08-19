@@ -23,5 +23,6 @@ namespace TaskManagementSystem.Service.IService
         void Delete(TaskEntity entity);
         Task<TaskDto?> GetTaskByIdAsync(string id);
         Task<TaskEntity> GetTaskByTitleAsync(string name);
+        void UpdateStatus(string userId, string taskId, string statusId);
     }
 }

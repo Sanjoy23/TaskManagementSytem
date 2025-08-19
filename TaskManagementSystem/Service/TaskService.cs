@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using TaskManagementSystem.Models;
 using TaskManagementSystem.Models.DTOs;
 using TaskManagementSystem.Models.ResponseDtos;
+using TaskManagementSystem.Repository;
 using TaskManagementSystem.Repository.IRepository;
 using TaskManagementSystem.Service.IService;
 
@@ -12,10 +13,12 @@ namespace TaskManagementSystem.Service
     public class TaskService : ITaskService
     {
         private readonly ITaskRepository _taskRepository;
+        private readonly IUserRepository _userRepository;
 
-        public TaskService(ITaskRepository taskRepository)
+        public TaskService(ITaskRepository taskRepository, IUserRepository userRepository)
         {
             _taskRepository = taskRepository;
+            _userRepository = userRepository;
         }
 
         public IEnumerable<TaskResponse> GetAllTasks(
@@ -180,6 +183,20 @@ namespace TaskManagementSystem.Service
         public void Delete(TaskEntity entity)
         {
             _taskRepository.Delete(entity);
+        }
+
+        public void UpdateStatus(string userId, string taskId, string statusId)
+        {
+            var task = _taskRepository.GetById(taskId).Result;
+            var user = _userRepository.GetById(userId).Result;
+            if (task == null)
+                throw new KeyNotFoundException("Task not found.");
+
+            if (!string.Equals(user.Id, task.AssignedToUserId, StringComparison.OrdinalIgnoreCase))
+                throw new UnauthorizedAccessException("Task does not belong to this user.");
+
+            task.StatusId = statusId;
+            _taskRepository.Update(task);
         }
     }
 }
