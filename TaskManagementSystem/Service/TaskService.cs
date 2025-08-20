@@ -37,7 +37,23 @@ namespace TaskManagementSystem.Service
                     AssignedToUserId = x.AssignedToUserId,
                     CreatedByUserId = x.CreatedByUserId,
                     TeamId = x.TeamId,
-                    DueDate = x.DueDate
+                    DueDate = x.DueDate,
+                    AssignedToUser = x.AssignedToUser != null ? new UserDto
+                    {
+                        Name = x.AssignedToUser.FullName,
+                        Email = x.AssignedToUser.Email,
+                        
+                    } : null,
+                    CreatedByUser = x.CreatedByUser != null ? new UserDto
+                    {
+                        Name = x.CreatedByUser.FullName,
+                        Email = x.CreatedByUser.Email
+                    } : null,
+                    Team = x.Team != null ? new TeamDto
+                    {
+                        Id = x.Team.Id,
+                        Name = x.Team.Name
+                    } : null
                 },
                 orderBy: orderBy
             );

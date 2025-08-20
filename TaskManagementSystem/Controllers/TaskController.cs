@@ -8,6 +8,7 @@ using TaskManagementSystem.Models;
 using TaskManagementSystem.Service.IService;
 using System.Security.Claims;
 using Serilog;
+using TaskManagementSystem.Features.Tasks.Queries;
 
 namespace TaskManagementSystem.Controllers
 {
@@ -23,9 +24,9 @@ namespace TaskManagementSystem.Controllers
             _taskService = taskService;
             _mediator = mediator;
         }
-
-        [HttpGet("all-tasks")]
-        public IActionResult GetAll([FromQuery] TaskFilterParameters filterParams)
+        [Authorize(Roles = "Admin,Manager,Employee")]
+        [HttpGet("tasks")]
+        public async Task<IActionResult> GetAll([FromQuery] TaskFilterParameters filterParams)
         {
             Expression<Func<TaskEntity, bool>>? filter = null;
 
@@ -41,46 +42,53 @@ namespace TaskManagementSystem.Controllers
                     (!filterParams.DueDate.HasValue || t.DueDate.Date == filterParams.DueDate.Value.Date);
             }
 
-            var tasks = _taskService.GetAllTasks(
-                filter: filter,
-                orderBy: q => q.OrderByDescending(t => t.DueDate) // example sorting
-            );
+            //var tasks = _taskService.GetAllTasks(
+            //    filter: filter,
+            //    orderBy: q => q.OrderByDescending(t => t.DueDate) // example sorting
+            //);
+
+            var result = await _mediator.Send(new GetAllTasksQuery(filterParams));
 
             return Ok(new
             {
                 Status = true,
                 Message = "Tasks retrieved successfully",
-                Result = tasks.ToList()
+                Result = result.ToList()
             });
         }
 
 
 
-        [Authorize(Roles = "Employee,Admin,Manager")]
-        [HttpGet("tasks")]
-        public async Task<IActionResult> GetAllTasks([FromQuery] string? status = null,
-            [FromQuery] string? assignedToUserId = null,
-            [FromQuery] string? teamId = null,
-            [FromQuery] DateTime? dueDate = null,
-            [FromQuery] int? pageNumber = null,
-            [FromQuery] int? pageSize = null,
-            [FromQuery] string? sortBy = null,
-            [FromQuery] bool sortDesc = false)
-        {
-            var tasks = await _taskService.GetAllTasksAsync(status, assignedToUserId, teamId, dueDate, pageNumber, pageSize, sortBy, sortDesc);
-            return Ok(tasks);
-        }
-
-        [HttpGet("task/{id}")]
-        public async Task<IActionResult> GetTaskById(string id)
-        {
-            var task = await _taskService.GetById(id);
-            if (task == null)
-            {
-                return NotFound(new { Status = false, Message = "Task not found" });
-            }
-            return Ok(task);
-        }
+        //[Authorize(Roles = "Employee,Admin,Manager")]
+        //[HttpGet("tasks")]
+        //public async Task<IActionResult> GetAllTasks([FromQuery] string? status = null,
+        //    [FromQuery] string? assignedToUserId = null,
+        //    [FromQuery] string? teamId = null,
+        //    [FromQuery] DateTime? dueDate = null,
+        //    [FromQuery] int? pageNumber = null,
+        //    [FromQuery] int? pageSize = null,
+        //    [FromQuery] string? sortBy = null,
+        //    [FromQuery] bool sortDesc = false)
+        //{
+        //    var tasks = await _taskService.GetAllTasksAsync(status, assignedToUserId, teamId, dueDate, pageNumber, pageSize, sortBy, sortDesc);
+        //    return Ok(tasks);
+        //}
+        //[Authorize(Roles = "Admin,Manager,Employee")]
+        //[HttpGet("task/{id}")]
+        //public async Task<IActionResult> GetTaskById(string id)
+        //{
+        //    var task = await _mediator.Send(id);
+        //    if (task == null)
+        //    {
+        //        return NotFound(new { Status = false, Message = "Task not found" });
+        //    }
+        //    return Ok(new
+        //    {
+        //        Status = true,
+        //        Message = "Task retrive successfully",
+        //        Result = task
+        //    });
+        //}
 
         [Authorize(Roles = "Manager,Admin")]
         [HttpPost("task")]
@@ -100,7 +108,7 @@ namespace TaskManagementSystem.Controllers
 
         [Authorize(Roles = "Manager,Admin")]
         [HttpPut("task/{id}")]
-        public  async Task<IActionResult> UpdateTask(string id, [FromBody] UpdateTaskCommand model)
+        public async Task<IActionResult> UpdateTask(string id, [FromBody] UpdateTaskCommand model)
         {
             if (model.Id != id.ToString())
             {
@@ -140,8 +148,8 @@ namespace TaskManagementSystem.Controllers
             {
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 _taskService.UpdateStatus(userId, taskId, statusId);
-                return Ok(new 
-                { 
+                return Ok(new
+                {
                     Status = true,
                     Message = "Status Changed successfully"
                 });
