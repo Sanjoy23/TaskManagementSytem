@@ -1,4 +1,6 @@
-﻿namespace TaskManagementSystem.Models.ResponseDtos
+﻿using TaskManagementSystem.Models.DTOs;
+
+namespace TaskManagementSystem.Models.ResponseDtos
 {
     public class TaskResponse
     {
@@ -10,12 +12,12 @@
         public string AssignedToUserId { get; set; } = null!;
         public string CreatedByUserId { get; set; } = null!;
 
-        public User? AssignedToUser { get; set; }
-        public User? CreatedByUser { get; set; }
+        public UserDto? AssignedToUser { get; set; }
+        public UserDto? CreatedByUser { get; set; }
 
         public string TeamId { get; set; } = null!;
 
-        public Team? Team { get; set; }
+        public TeamDto? Team { get; set; }
         public DateTime DueDate { get; set; }
     }
 }
