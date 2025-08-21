@@ -120,4 +120,17 @@ app.MapControllers();
 // Add a simple root endpoint for testing
 app.MapGet("/", () => "TaskManagement API is running successfully!");
 
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    dbContext.Database.Migrate();
+
+    var seeder = new BulkDataSeeder(dbContext);
+    await seeder.SeedAsync(
+        teamsCount: 50,
+        usersCount: 2000,
+        tasksCount: 100000
+    );
+}
+
 app.Run();

@@ -28,32 +28,13 @@ namespace TaskManagementSystem.Controllers
         [HttpGet("tasks")]
         public async Task<IActionResult> GetAll([FromQuery] TaskFilterParameters filterParams)
         {
-            Expression<Func<TaskEntity, bool>>? filter = null;
-
-            if ((filterParams.Statuses != null && filterParams.Statuses.Any()) ||
-                (filterParams.AssignedToUserIds != null && filterParams.AssignedToUserIds.Any()) ||
-                (filterParams.TeamIds != null && filterParams.TeamIds.Any()) ||
-                filterParams.DueDate.HasValue)
-            {
-                filter = t =>
-                    (filterParams.Statuses == null || !filterParams.Statuses.Any() || (t.Status != null && filterParams.Statuses.Contains(t.Status.Name))) &&
-                    (filterParams.AssignedToUserIds == null || !filterParams.AssignedToUserIds.Any() || filterParams.AssignedToUserIds.Contains(t.AssignedToUserId)) &&
-                    (filterParams.TeamIds == null || !filterParams.TeamIds.Any() || (t.Team != null && filterParams.TeamIds.Contains(t.Team.Name))) &&
-                    (!filterParams.DueDate.HasValue || t.DueDate.Date == filterParams.DueDate.Value.Date);
-            }
-
-            //var tasks = _taskService.GetAllTasks(
-            //    filter: filter,
-            //    orderBy: q => q.OrderByDescending(t => t.DueDate) // example sorting
-            //);
-
             var result = await _mediator.Send(new GetAllTasksQuery(filterParams));
 
             return Ok(new
             {
                 Status = true,
                 Message = "Tasks retrieved successfully",
-                Result = result.ToList()
+                Result = result.Data
             });
         }
 

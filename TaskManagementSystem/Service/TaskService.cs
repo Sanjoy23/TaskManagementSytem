@@ -21,13 +21,14 @@ namespace TaskManagementSystem.Service
             _userRepository = userRepository;
         }
 
-        public IEnumerable<TaskResponse> GetAllTasks(
-    Expression<Func<TaskEntity, bool>>? filter = null,
-    Func<IQueryable<TaskEntity>, IOrderedQueryable<TaskEntity>>? orderBy = null)
+        public async Task<PagedResult<TaskResponse>> GetAllTasksAsync(TaskFilterParameters filterParams)
         {
-            return _taskRepository.GetAll(
+            Expression<Func<TaskEntity, bool>> filter = BuildFilter(filterParams);
+            var orderBy = BuildOrderBy(filterParams.SortBy, filterParams.SortDirection);
+
+            return await _taskRepository.GetPagedAsync(
                 filter: filter,
-                includeProperties: "Status,AssignedToUser,CreatedByUser,Team", // eager loading if needed
+                includeProperties: "Status,AssignedToUser,CreatedByUser,Team",
                 selector: x => new TaskResponse
                 {
                     Id = x.Id,
@@ -38,11 +39,15 @@ namespace TaskManagementSystem.Service
                     CreatedByUserId = x.CreatedByUserId,
                     TeamId = x.TeamId,
                     DueDate = x.DueDate,
+                    Status = x.Status != null ? new TasksStatus
+                    {
+                        Id = x.Status.Id,
+                        Name = x.Status.Name
+                    } : null,
                     AssignedToUser = x.AssignedToUser != null ? new UserDto
                     {
                         Name = x.AssignedToUser.FullName,
-                        Email = x.AssignedToUser.Email,
-                        
+                        Email = x.AssignedToUser.Email
                     } : null,
                     CreatedByUser = x.CreatedByUser != null ? new UserDto
                     {
@@ -55,53 +60,105 @@ namespace TaskManagementSystem.Service
                         Name = x.Team.Name
                     } : null
                 },
-                orderBy: orderBy
+                        orderBy: orderBy,
+                        pageNumber: filterParams.PageNumber,
+                        pageSize: filterParams.PageSize
             );
         }
 
 
-        public async Task<PagedResultDto<TaskDto>> GetAllTasksAsync(string? status,
-     string? assignedToUserId,
-     string? teamId,
-     DateTime? dueDate,
-     int? pageNumber,
-     int? pageSize,
-     string? sortBy,
-     bool sortDesc)
+        private Expression<Func<TaskEntity, bool>> BuildFilter(TaskFilterParameters filterParams)
         {
-            var result = await _taskRepository.GetAllAsync(status, assignedToUserId, teamId, dueDate, pageNumber, pageSize, sortBy, sortDesc);
+            var parameter = Expression.Parameter(typeof(TaskEntity), "t");
+            Expression? body = null;
 
-            return new PagedResultDto<TaskDto>
+            // Status filter
+            if (filterParams.Statuses?.Any() == true)
             {
-                CurrentPage = result.CurrentPage,
-                PageSize = result.PageSize,
-                TotalCount = result.TotalCount,
-                Items = result.Items.Select(t => new TaskDto
-                {
-                    Id = t.Id,
-                    Title = t.Title,
-                    Description = t.Description,
-                    Status = t.StatusId,
-                    AssignedToUserId = t.AssignedToUserId,
-                    CreatedByUserId = t.CreatedByUserId,
-                    TeamId = t.TeamId,
-                    DueDate = t.DueDate,
-                    AssignedToUser = t.AssignedToUser != null ? new UserDto
-                    {
-                        Name = t.AssignedToUser.FullName,
-                        Email = t.AssignedToUser.Email
-                    } : null,
-                    CreatedByUser = t.CreatedByUser != null ? new UserDto
-                    {
-                        Name = t.CreatedByUser.FullName,
-                        Email = t.CreatedByUser.Email
-                    } : null,
-                    Team = t.Team != null ? new TeamDto
-                    {
-                        Id = t.Team.Id,
-                        Name = t.Team.Name
-                    } : null
-                }).ToList()
+                var statusProperty = Expression.Property(parameter, "Status");
+                var statusNameProperty = Expression.Property(statusProperty, "Name");
+                var statusValues = Expression.Constant(filterParams.Statuses);
+                var statusContains = Expression.Call(statusValues, "Contains", null, statusNameProperty);
+                var statusNotNull = Expression.NotEqual(statusProperty, Expression.Constant(null));
+                var statusCondition = Expression.AndAlso(statusNotNull, statusContains);
+
+                body = body == null ? statusCondition : Expression.AndAlso(body, statusCondition);
+            }
+
+            // Assigned user filter
+            if (filterParams.AssignedToUserIds?.Any() == true)
+            {
+                var userIdProperty = Expression.Property(parameter, "AssignedToUserId");
+                var userIdValues = Expression.Constant(filterParams.AssignedToUserIds);
+                var userIdContains = Expression.Call(userIdValues, "Contains", null, userIdProperty);
+
+                body = body == null ? userIdContains : Expression.AndAlso(body, userIdContains);
+            }
+
+            // Team filter
+            if (filterParams.TeamIds?.Any() == true)
+            {
+                var teamProperty = Expression.Property(parameter, "Team");
+                var teamNameProperty = Expression.Property(teamProperty, "Name");
+                var teamValues = Expression.Constant(filterParams.TeamIds);
+                var teamContains = Expression.Call(teamValues, "Contains", null, teamNameProperty);
+                var teamNotNull = Expression.NotEqual(teamProperty, Expression.Constant(null));
+                var teamCondition = Expression.AndAlso(teamNotNull, teamContains);
+
+                body = body == null ? teamCondition : Expression.AndAlso(body, teamCondition);
+            }
+
+            // Date range filter (improved from single date)
+            if (filterParams.DueDateFrom.HasValue)
+            {
+                var dueDateProperty = Expression.Property(parameter, "DueDate");
+                var dueDateFrom = Expression.Constant(filterParams.DueDateFrom.Value.Date);
+                var dateCondition = Expression.GreaterThanOrEqual(dueDateProperty, dueDateFrom);
+
+                body = body == null ? dateCondition : Expression.AndAlso(body, dateCondition);
+            }
+
+            if (filterParams.DueDateTo.HasValue)
+            {
+                var dueDateProperty = Expression.Property(parameter, "DueDate");
+                var dueDateTo = Expression.Constant(filterParams.DueDateTo.Value.Date.AddDays(1));
+                var dateCondition = Expression.LessThan(dueDateProperty, dueDateTo);
+
+                body = body == null ? dateCondition : Expression.AndAlso(body, dateCondition);
+            }
+
+            // Search term filter
+            if (!string.IsNullOrWhiteSpace(filterParams.SearchTerm))
+            {
+                var titleProperty = Expression.Property(parameter, "Title");
+                var descProperty = Expression.Property(parameter, "Description");
+                var searchTerm = Expression.Constant(filterParams.SearchTerm.ToLower());
+
+                var titleContains = Expression.Call(
+                    Expression.Call(titleProperty, "ToLower", null),
+                    "Contains", null, searchTerm);
+                var descContains = Expression.Call(
+                    Expression.Call(descProperty, "ToLower", null),
+                    "Contains", null, searchTerm);
+
+                var searchCondition = Expression.OrElse(titleContains, descContains);
+                body = body == null ? searchCondition : Expression.AndAlso(body, searchCondition);
+            }
+
+            return body != null ? Expression.Lambda<Func<TaskEntity, bool>>(body, parameter) : (t => true);
+        }
+        private Func<IQueryable<TaskEntity>, IOrderedQueryable<TaskEntity>>? BuildOrderBy(string? sortBy, string? sortDirection)
+        {
+            if (string.IsNullOrEmpty(sortBy)) return null;
+
+            var isDescending = sortDirection?.ToLower() == "desc";
+
+            return sortBy.ToLower() switch
+            {
+                "title" => q => isDescending ? q.OrderByDescending(t => t.Title) : q.OrderBy(t => t.Title),
+                "duedate" => q => isDescending ? q.OrderByDescending(t => t.DueDate) : q.OrderBy(t => t.DueDate),
+                "status" => q => isDescending ? q.OrderByDescending(t => t.Status!.Name) : q.OrderBy(t => t.Status!.Name),
+                _ => q => q.OrderByDescending(t => t.DueDate) // Default
             };
         }
 
