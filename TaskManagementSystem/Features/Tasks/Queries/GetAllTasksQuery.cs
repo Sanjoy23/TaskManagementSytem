@@ -5,7 +5,7 @@ using TaskManagementSystem.Models.ResponseDtos;
 
 namespace TaskManagementSystem.Features.Tasks.Queries
 {
-    public class GetAllTasksQuery : IRequest<IEnumerable<TaskResponse>>
+    public class GetAllTasksQuery : IRequest<PagedResult<TaskResponse>>
     {
         public TaskFilterParameters FilterParams { get; set; }
         public GetAllTasksQuery(TaskFilterParameters filterParams)

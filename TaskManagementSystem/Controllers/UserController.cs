@@ -47,7 +47,7 @@ namespace TaskManagementSystem.Controllers
                 RoleName = user.Role?.RoleName.ToString() ?? string.Empty,
             });
         }
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         [HttpPost("create-user")]
         public async Task<IActionResult> Create([FromBody] UserModel usermodel)
         {

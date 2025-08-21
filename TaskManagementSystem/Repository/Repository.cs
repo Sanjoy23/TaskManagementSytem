@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 using System.Linq;
 using TaskManagementSystem.Data;
 using TaskManagementSystem.Repository.IRepository;
+using TaskManagementSystem.Models;
 
 namespace TaskManagementSystem.Repository
 {
@@ -97,6 +98,57 @@ namespace TaskManagementSystem.Repository
                 }
             }
             return query.FirstOrDefault();
+        }
+
+        public async Task<PagedResult<TResult>> GetPagedAsync<TResult>(
+            Expression<Func<T, bool>>? filter = null,
+            string? includeProperties = null,
+            Expression<Func<T, TResult>>? selector = null,
+            Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
+            int pageNumber = 1,
+            int pageSize = 10)
+        {
+            IQueryable<T> query = _dbSet;
+
+            // Apply filter first to reduce dataset
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
+
+            // Get total count before pagination (important for UI)
+            var totalCount = await query.CountAsync();
+
+            // Apply includes
+            if (includeProperties != null)
+            {
+                foreach (var property in includeProperties.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    query = query.Include(property.Trim());
+                }
+            }
+
+            // Apply ordering
+            if (orderBy != null)
+            {
+                query = orderBy(query);
+            }
+
+            // Apply pagination
+            query = query.Skip((pageNumber - 1) * pageSize).Take(pageSize);
+
+            // Apply projection and execute query
+            List<TResult> data;
+            if (selector != null)
+            {
+                data = await query.Select(selector).ToListAsync();
+            }
+            else
+            {
+                data = await query.Cast<TResult>().ToListAsync();
+            }
+
+            return new PagedResult<TResult>(data, pageNumber, pageSize, totalCount);
         }
     }
 }
