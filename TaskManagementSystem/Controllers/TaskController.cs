@@ -9,6 +9,7 @@ using TaskManagementSystem.Service.IService;
 using System.Security.Claims;
 using Serilog;
 using TaskManagementSystem.Features.Tasks.Queries;
+using TaskManagementSystem.Service;
 
 namespace TaskManagementSystem.Controllers
 {
@@ -18,11 +19,13 @@ namespace TaskManagementSystem.Controllers
     {
         private readonly ITaskService _taskService;
         private readonly IMediator _mediator;
+        private readonly IWebSocketService _webSocketService;
 
-        public TaskController(ITaskService taskService, IMediator mediator)
+        public TaskController(ITaskService taskService, IMediator mediator, IWebSocketService webSocketService)
         {
             _taskService = taskService;
             _mediator = mediator;
+            _webSocketService = webSocketService;
         }
         [Authorize(Roles = "Admin,Manager,Employee")]
         [HttpGet("tasks")]
@@ -123,12 +126,13 @@ namespace TaskManagementSystem.Controllers
         }
         [Authorize(Roles = "Employee")]
         [HttpPut("status/")]
-        public IActionResult UpdateStatus(string taskId, string statusId)
+        public async Task<IActionResult> UpdateStatus(string taskId, string statusId)
         {
             try
             {
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 _taskService.UpdateStatus(userId, taskId, statusId);
+                await _webSocketService.NotifyClientsAsync("Task updated successfully.");
                 return Ok(new
                 {
                     Status = true,
