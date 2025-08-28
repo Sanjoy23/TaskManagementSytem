@@ -27,6 +27,7 @@ This system provides secure endpoints for creating and managing users, teams, an
 ## 🛠️ Tech Stack
 - **.NET 8 Web API**
 - **Entity Framework Core**
+- **CQRS Pattern**
 - **SQL Server**
 - **JWT Authentication**
 - **FluentValidation**
@@ -40,6 +41,7 @@ This system provides secure endpoints for creating and managing users, teams, an
 TaskManagementSystem/
 │── Controllers   →  API endpoints
 │── Data          →  EF Core DbContext
+|── Features      →  CQRS Pattern 
 │── Models        →  Entity models & DTOs
 │── Repository    →  Repository interfaces & implementations
 │── Service       →  Business logic services
