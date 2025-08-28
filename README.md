@@ -16,6 +16,8 @@ This system provides secure endpoints for creating and managing users, teams, an
 - **User management**
   - Create, Update, Read and Delete User
 - **Entity Framework Core** with SQL Server
+- **CQRS Pattern**
+- **WebSocket** for notifications
 - **Repository & Service Layer Pattern**
 - **Global Exception Handling Middleware**
 - **Request Validation** using FluentValidation
