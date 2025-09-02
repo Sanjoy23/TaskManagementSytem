@@ -57,22 +57,22 @@ namespace TaskManagementSystem.Controllers
         //    var tasks = await _taskService.GetAllTasksAsync(status, assignedToUserId, teamId, dueDate, pageNumber, pageSize, sortBy, sortDesc);
         //    return Ok(tasks);
         //}
-        //[Authorize(Roles = "Admin,Manager,Employee")]
-        //[HttpGet("task/{id}")]
-        //public async Task<IActionResult> GetTaskById(string id)
-        //{
-        //    var task = await _mediator.Send(id);
-        //    if (task == null)
-        //    {
-        //        return NotFound(new { Status = false, Message = "Task not found" });
-        //    }
-        //    return Ok(new
-        //    {
-        //        Status = true,
-        //        Message = "Task retrive successfully",
-        //        Result = task
-        //    });
-        //}
+        [Authorize(Roles = "Admin,Manager,Employee")]
+        [HttpGet("task/{id}")]
+        public async Task<IActionResult> GetTaskById(string id)
+        {
+            var task = await _mediator.Send(id);
+            if (task == null)
+            {
+                return NotFound(new { Status = false, Message = "Task not found" });
+            }
+            return Ok(new
+            {
+                Status = true,
+                Message = "Task retrive successfully",
+                Result = task
+            });
+        }
 
         [Authorize(Roles = "Manager,Admin")]
         [HttpPost("task")]

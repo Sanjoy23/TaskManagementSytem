@@ -1,8 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
+﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Serilog;
-using TaskManagementSystem.Models;
+using TaskManagementSystem.Features.Users.Commands;
 using TaskManagementSystem.Models.ResponseDtos;
 using TaskManagementSystem.Service.IService;
 
@@ -13,10 +12,12 @@ namespace TaskManagementSystem.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly IMediator _mediator;
 
-        public UserController(IUserService userService)
+        public UserController(IUserService userService, IMediator mediator)
         {
             _userService = userService;
+            _mediator = mediator;
         }
 
         [Authorize(Roles = "Admin,Manager")]
@@ -49,132 +50,38 @@ namespace TaskManagementSystem.Controllers
         }
         //[Authorize(Roles = "Admin")]
         [HttpPost("create-user")]
-        public async Task<IActionResult> Create([FromBody] UserModel usermodel)
+        public async Task<IActionResult> Create([FromBody] CreateUserCommand command)
         {
-            if (!ModelState.IsValid)
+            var result = await _mediator.Send(command);
+            if (result.Status)
             {
-                var messages = ModelState
-              .SelectMany(modelState => modelState.Value.Errors)
-              .Select(err => err.ErrorMessage)
-              .ToList();
-
-                return BadRequest(new UserResponse
-                {
-                    Status = false,
-                    Message = "Bad Request"
-                });
+                return Ok(result);
             }
-
-            var userExist = await _userService.GetUserByEmailAsync(usermodel.Email);
-            if (userExist != null)
-            {
-                return BadRequest(new UserResponse
-                {
-                    Status = false,
-                    Message = "Email already Exist. Please try with another one."
-                });
-            }
-            
-            var user = new User
-            {
-                FullName = usermodel.FullName,
-                Email = usermodel.Email,
-                RoleId = usermodel.RoleId
-
-            };
-            var passwordHasher = new PasswordHasher<User>();
-            user.Password = passwordHasher.HashPassword(user, usermodel.Password);
-            try
-            {
-                _userService.Add(user);
-                return Ok(new UserResponse
-                {
-                    Status = true,
-                    Message = "User Creation Completed"
-                });
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, ex.Message);
-                return BadRequest(new UserResponse{
-                    Status = false,
-                    Message = ex.Message
-                });
-            }
-            
-            
+            else return BadRequest(result);
         }
+
         [Authorize(Roles = "Admin")]
         [HttpPut("update-user/{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] UserModel userModel)
+        public async Task<IActionResult> Update(string id, [FromBody] UpdateUserCommand command)
         {
-            var existingUser = await _userService.GetById(id);
-            if (existingUser == null)
+            var result = await _mediator.Send(command);
+            if (result.Status)
             {
-                return NotFound(new UserResponse
-                {
-                    Status = false,
-                    Message = "User not found"
-                });
+                return Ok(result);
             }
-            var passwordHasher = new PasswordHasher<User>();
-            var newPassword = passwordHasher.HashPassword(existingUser, userModel.Password);
-
-            existingUser.FullName = userModel.FullName ?? existingUser.FullName;
-            existingUser.Email = userModel.Email ?? existingUser.Email; 
-            existingUser.Password = newPassword ?? existingUser.Password ; 
-            existingUser.RoleId = userModel.RoleId ?? existingUser.RoleId; 
-
-            try
-            {
-                _userService.Update(existingUser);
-                return Ok(new UserResponse
-                {
-                    Status = true,
-                    Message = "User updated successfully"
-                });
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, ex.Message);
-                return BadRequest(new UserResponse
-                {
-                    Status = false,
-                    Message = ex.Message
-                });
-            }
+            return BadRequest(result);
         }
+
         [Authorize(Roles = "Admin")]
         [HttpDelete("delete-user/{id}")]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(DeleteUserCommand command)
         {
-            var existingUser = await _userService.GetById(id);
-            if (existingUser == null)
+            var result = await _mediator.Send(command);
+            if (result.Status)
             {
-                return NotFound(new UserResponse
-                {
-                    Status = false,
-                    Message = "User not found. Failed to delete."
-                });
+                return Ok(result);
             }
-            try
-            {
-                _userService.Delete(existingUser);
-                return Ok(new UserResponse
-                {
-                    Status = true,
-                    Message = "User deleted successfully."
-                });
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, ex.Message);
-                return BadRequest(new UserResponse
-                {
-                    Status = false,
-                    Message = ex.Message
-                });
-            }
+            return BadRequest(result);
         }
 
     }
