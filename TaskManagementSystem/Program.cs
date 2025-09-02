@@ -36,6 +36,7 @@ builder.Services.AddScoped<ITeamService, TeamService>();
 builder.Services.AddScoped<ITeamRepository, TeamRepository>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
+builder.Services.AddSingleton<IWebSocketService, WebSocketService>();
 
 builder.Services.AddFluentValidationAutoValidation()
     .AddFluentValidationClientsideAdapters()
@@ -115,6 +116,7 @@ if (app.Environment.IsProduction() && !string.IsNullOrEmpty(Environment.GetEnvir
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseWebSockets();
 app.MapControllers();
 
 // Add a simple root endpoint for testing
