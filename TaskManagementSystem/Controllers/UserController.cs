@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskManagementSystem.Features.Users.Commands;
-using TaskManagementSystem.Models.ResponseDtos;
+using TaskManagementSystem.Features.Users.Queries;
 using TaskManagementSystem.Service.IService;
 
 namespace TaskManagementSystem.Controllers
@@ -24,29 +24,24 @@ namespace TaskManagementSystem.Controllers
         [HttpGet("users")]
         public async Task<IActionResult> GetAll()
         {
-            var users = await _userService.GetAll();
-            return Ok(users);
+            var results = await _mediator.Send(new GetAllUserQuery());
+            if (results.Status)
+            {
+                return Ok(results);
+            }
+            return NotFound(results);
         }
 
         [Authorize(Roles = "Admin")]
         [HttpGet("user/{id}")]
         public async Task<IActionResult> GetById(string id)
         {
-            var user = await _userService.GetById(id);
-            if (user == null)
+            var response = await _mediator.Send(new GetUserByIdQuery(id));
+            if (response.Status)
             {
-                return NotFound(new UserResponse
-                {
-                    Status = false,
-                    Message = "User not found"
-                });
+                return Ok(response);
             }
-            return Ok(new
-            {
-                FullName = user.FullName.ToString(),
-                Email = user.Email.ToString(),
-                RoleName = user.Role?.RoleName.ToString() ?? string.Empty,
-            });
+            return NotFound(response);
         }
         //[Authorize(Roles = "Admin")]
         [HttpPost("create-user")]

@@ -28,6 +28,7 @@ namespace TaskManagementSystem.Features.Users.Handlers
             }
             var user = new User
             {
+                Id = Guid.NewGuid().ToString(),
                 FullName = request.FullName,
                 Email = request.Email,
                 RoleId = request.RoleId
