@@ -13,5 +13,10 @@ namespace TaskManagementSystem.Repository
         {
             _context = context;
         }
+
+        public async Task<Team> GetByNameAsync(string name)
+        {
+            return await _context.Teams.FirstOrDefaultAsync(x => x.Name == name);
+        }
     }
 }
