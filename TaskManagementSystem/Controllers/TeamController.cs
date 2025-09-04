@@ -1,6 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
+using TaskManagementSystem.Features.Teams.Commands;
+using TaskManagementSystem.Features.Teams.Queries;
 using TaskManagementSystem.Models;
 using TaskManagementSystem.Service.IService;
 
@@ -11,135 +14,72 @@ namespace TaskManagementSystem.Controllers
     public class TeamController : ControllerBase
     {
         private readonly ITeamService _teamService;
+        private readonly IMediator _mediator;
 
-        public TeamController(ITeamService teamService)
+        public TeamController(ITeamService teamService, IMediator mediator)
         {
             _teamService = teamService;
+            _mediator = mediator;
         }
 
         [Authorize(Roles = "Admin")]
         [HttpGet("teams")]
         public async Task<IActionResult> GetAllTeams()
         {
-            try
+            var response = await _mediator.Send(new GetAllTeamQuery());
+            if(response.Status)
             {
-                var teams = await _teamService.GetAll();
-                return Ok(teams);
+                return Ok(response);
             }
-            catch (Exception ex)
-            {
-                Log.Error(ex, ex.Message);
-                return BadRequest(new
-                {
-                    Status = false,
-                    Message = ex.Message.ToString()
-                });
-            }
+            return NotFound(response);
         }
 
         [Authorize(Roles = "Admin")]
         [HttpGet("teams/{id}")]
         public async Task<IActionResult> GetTeamById(string id)
         {
-            try
+            var response = await _mediator.Send(new GetTeamByIdQuery(id));
+            if (response.Status)
             {
-                var team = await _teamService.GetById(id);
-                return Ok(team);
+                return Ok(response);
             }
-            catch (Exception ex)
-            {
-                Log.Error(ex, ex.Message);
-                return BadRequest(new
-                {
-                    Status = false,
-                    Message = ex.Message.ToString()
-                });
-            }
+            return NotFound(response);
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPost("teams")]
-        public  IActionResult CreateTeam([FromBody] TeamModel teamModel)
+        public async Task<IActionResult> CreateTeam([FromBody] CreateTeamCommand command)
         {
-            //var teamExist = await _teamService.GetTeamByNameAsync();
-            var team = new Team
+            var response = await _mediator.Send(command);
+            if (response.Status)
             {
-                Id = Guid.NewGuid().ToString(),
-                Name = teamModel.Name,
-                Description = teamModel.Description
-            };
-            try
-            {
-                _teamService.Add(team);
-                return Ok(new { Status = true, Message = "Team created successfully" });
+                return Ok(response);
             }
-            catch (Exception ex)
-            {
-                Log.Error(ex, ex.Message);
-                return BadRequest(new
-                {
-                    Status = false,
-                    Message = ex.Message.ToString()
-                });
-            }
+            return Conflict(response); // 409
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPut("teams/{id}")]
-        public async Task<IActionResult> UpdateTeam(string id, [FromBody] TeamModel teamModel)
+        public async Task<IActionResult> UpdateTeam(string id, [FromBody] UpdateTeamCommand command)
         {
-            var existingTeam = await _teamService.GetById(id);
-            if (existingTeam == null)
+            var response = await _mediator.Send(command);
+            if (response.Status)
             {
-                return NotFound(new { Status = false, Message = "Team not found" });
+                return Ok(response);
             }
-
-            existingTeam.Name = teamModel.Name == "" ? existingTeam.Name : teamModel.Name;
-            existingTeam.Description = teamModel.Description == ""
-                                    ? existingTeam.Description : teamModel.Description;
-
-            try
-            {
-                _teamService.Update(existingTeam);
-                return Ok(new
-                {
-                    Status = true,
-                    Message = "Team updated successfully"
-                });
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, ex.Message);
-                return BadRequest(new
-                {
-                    Status = false,
-                    Message = ex.Message.ToString()
-                });
-            }
+            return NotFound(response);
         }
 
         [Authorize(Roles = "Admin")]
         [HttpDelete("teams/{id}")]
-        public async Task<IActionResult> DeleteTeam(string id)
+        public async Task<IActionResult> DeleteTeam(DeleteTeamCommand command)
         {
-            var existingTeam = await _teamService.GetById(id);
-            if (existingTeam == null)
+            var response = await _mediator.Send(command);
+            if (response.Status)
             {
-                return NotFound(new { Status = false, Message = "Team not found" });
+                return Ok(response);
             }
-
-            try
-            {
-                _teamService.Delete(existingTeam);
-                return Ok(new { Status = true, Message = "Team deleted successfully" });
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, ex.Message);
-                return BadRequest(new { Status = false, Message = "Failed to delete team" });
-            }     
+            return Conflict(response);
         }
-
-
     }
 }
