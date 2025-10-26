@@ -10,6 +10,7 @@ using System.Security.Claims;
 using Serilog;
 using TaskManagementSystem.Features.Tasks.Queries;
 using TaskManagementSystem.Service;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace TaskManagementSystem.Controllers
 {
@@ -73,7 +74,7 @@ namespace TaskManagementSystem.Controllers
                 Result = task
             });
         }
-
+        [EnableRateLimiting("FixedPolicey")] // added rate limiter at specific endpoints.
         [Authorize(Roles = "Manager,Admin")]
         [HttpPost("task")]
         public async Task<IActionResult> CreateTask([FromBody] CreateTaskCommand command)
