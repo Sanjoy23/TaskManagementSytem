@@ -2,11 +2,13 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using System.Text;
+using System.Threading.RateLimiting;
 using TaskManagementSystem.Data;
 using TaskManagementSystem.Models.Validators;
 using TaskManagementSystem.Repository;
@@ -38,10 +40,24 @@ builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddSingleton<IWebSocketService, WebSocketService>();
 
+// Configure Fluent Validation
 builder.Services.AddFluentValidationAutoValidation()
     .AddFluentValidationClientsideAdapters()
     .AddValidatorsFromAssemblyContaining<UserValidator>();
 
+// Configure rate limiting
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("FixedPolicey", opt =>
+    {
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.PermitLimit = 100;
+        opt.QueueLimit = 2;
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+    });
+});
+
+// Configure JWT Authentication
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -112,7 +128,7 @@ if (app.Environment.IsProduction() && !string.IsNullOrEmpty(Environment.GetEnvir
 {
     app.UseHttpsRedirection();
 }
-
+//app.UseRateLimiter(); // Globally added.
 app.UseAuthentication();
 app.UseAuthorization();
 
