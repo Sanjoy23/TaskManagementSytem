@@ -8,5 +8,6 @@ namespace TaskManagementSystem.Service.IService
         Task AddSocketAsync(WebSocket webSocket);
         Task BroadcastAsync(SocketMessage message);
         Task NotifyClientsAsync(string message);
+        int GetActiveConnectionCount();
     }
 }
