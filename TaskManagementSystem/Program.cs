@@ -129,10 +129,18 @@ if (app.Environment.IsProduction() && !string.IsNullOrEmpty(Environment.GetEnvir
     app.UseHttpsRedirection();
 }
 //app.UseRateLimiter(); // Globally added.
+
+// WebSockets must be configured before authentication/authorization
+// to allow WebSocket handshake to complete
+app.UseWebSockets(new WebSocketOptions
+{
+    KeepAliveInterval = TimeSpan.FromSeconds(120),
+    ReceiveBufferSize = 4 * 1024
+});
+
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseWebSockets();
 app.MapControllers();
 
 // Add a simple root endpoint for testing

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Test Client</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin-bottom: 10px;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .panel h2 {
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.connecting {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .messages {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .message {
+            padding: 8px;
+            margin-bottom: 8px;
+            border-left: 3px solid #667eea;
+            background: #f8f9fa;
+            border-radius: 3px;
+        }
+
+        .message.sent {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+
+        .message.received {
+            border-left-color: #007bff;
+            background: #d1ecf1;
+        }
+
+        .message.error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .message-content {
+            word-wrap: break-word;
+        }
+
+        .clear-btn {
+            background: #dc3545;
+            margin-top: 10px;
+        }
+
+        .info {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .info h3 {
+            color: #1976D2;
+            margin-bottom: 10px;
+        }
+
+        .info ul {
+            margin-left: 20px;
+            color: #555;
+        }
+
+        .info li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔌 WebSocket Test Client</h1>
+            <p>Test your WebSocket implementation</p>
+        </div>
+
+        <div class="content">
+            <div class="panel">
+                <h2>Connection</h2>
+                <div id="status" class="status disconnected">Disconnected</div>
+                
+                <div class="form-group">
+                    <label for="wsUrl">WebSocket URL:</label>
+                    <input type="text" id="wsUrl" value="ws://localhost:5012/ws" placeholder="ws://localhost:5012/ws">
+                </div>
+
+                <button id="connectBtn" onclick="connect()">Connect</button>
+                <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+            </div>
+
+            <div class="panel">
+                <h2>Send Test Broadcast</h2>
+                <div class="form-group">
+                    <label for="messageType">Message Type:</label>
+                    <input type="text" id="messageType" value="Test" placeholder="e.g., Notification, Update">
+                </div>
+                <div class="form-group">
+                    <label for="messageSender">Sender:</label>
+                    <input type="text" id="messageSender" value="Test Client" placeholder="Sender name">
+                </div>
+                <div class="form-group">
+                    <label for="messageContent">Content:</label>
+                    <textarea id="messageContent" placeholder="Enter message content">Hello from WebSocket test client!</textarea>
+                </div>
+                <button onclick="sendTestBroadcast()">Send Broadcast via API</button>
+            </div>
+        </div>
+
+        <div class="panel" style="margin: 20px;">
+            <h2>Messages</h2>
+            <button class="clear-btn" onclick="clearMessages()">Clear Messages</button>
+            <div id="messages" class="messages"></div>
+        </div>
+
+        <div class="info" style="margin: 20px;">
+            <h3>📋 Testing Instructions</h3>
+            <ul>
+                <li><strong>Step 1:</strong> Make sure your API is running (default: http://localhost:5012)</li>
+                <li><strong>Step 2:</strong> Click "Connect" to establish WebSocket connection</li>
+                <li><strong>Step 3:</strong> Open this page in multiple browser tabs/windows to test multiple connections</li>
+                <li><strong>Step 4:</strong> Use "Send Broadcast via API" to send a test message to all connected clients</li>
+                <li><strong>Step 5:</strong> Verify that all connected clients receive the broadcast message</li>
+                <li><strong>Step 6:</strong> Test disconnection by clicking "Disconnect" and verify cleanup</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let socket = null;
+        const apiBaseUrl = 'http://localhost:5012';
+
+        function updateStatus(status, text) {
+            const statusEl = document.getElementById('status');
+            statusEl.className = `status ${status}`;
+            statusEl.textContent = text;
+        }
+
+        function addMessage(type, content) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'message-time';
+            timeDiv.textContent = new Date().toLocaleTimeString();
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
+            
+            messageDiv.appendChild(timeDiv);
+            messageDiv.appendChild(contentDiv);
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        async function connect() {
+            const url = document.getElementById('wsUrl').value;
+            
+            if (!url) {
+                alert('Please enter a WebSocket URL');
+                return;
+            }
+
+            // First, test if the API is reachable
+            try {
+                const apiUrl = url.replace('ws://', 'http://').replace('wss://', 'https://').split('/')[0] + '/';
+                addMessage('sent', `Testing API connectivity to ${apiUrl}...`);
+                const response = await fetch(apiUrl);
+                if (response.ok) {
+                    addMessage('received', '✓ API is reachable');
+                }
+            } catch (error) {
+                addMessage('error', `⚠ API might not be running. Make sure your API is running on the correct port. Error: ${error.message}`);
+            }
+
+            try {
+                updateStatus('connecting', 'Connecting...');
+                addMessage('sent', `Attempting to connect to ${url}...`);
+                socket = new WebSocket(url);
+
+                socket.onopen = function(event) {
+                    updateStatus('connected', 'Connected');
+                    document.getElementById('connectBtn').disabled = true;
+                    document.getElementById('disconnectBtn').disabled = false;
+                    addMessage('sent', `Connected to ${url}`);
+                };
+
+                socket.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        addMessage('received', `Received: ${JSON.stringify(data, null, 2)}`);
+                    } catch (e) {
+                        addMessage('received', `Received: ${event.data}`);
+                    }
+                };
+
+                socket.onerror = function(error) {
+                    updateStatus('disconnected', 'Connection Error');
+                    const errorMsg = `WebSocket Error: ${error.message || 'Connection failed'}\n` +
+                        `Possible causes:\n` +
+                        `1. API is not running (check if http://localhost:5012 is accessible)\n` +
+                        `2. Wrong port number\n` +
+                        `3. WebSocket endpoint not configured correctly\n` +
+                        `4. Firewall blocking the connection`;
+                    addMessage('error', errorMsg);
+                    console.error('WebSocket error:', error);
+                };
+
+                socket.onclose = function(event) {
+                    updateStatus('disconnected', 'Disconnected');
+                    document.getElementById('connectBtn').disabled = false;
+                    document.getElementById('disconnectBtn').disabled = true;
+                    addMessage('error', `Connection closed. Code: ${event.code}, Reason: ${event.reason || 'No reason provided'}`);
+                    socket = null;
+                };
+            } catch (error) {
+                updateStatus('disconnected', 'Connection Failed');
+                addMessage('error', `Failed to connect: ${error.message}`);
+            }
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.close();
+                socket = null;
+            }
+        }
+
+        async function sendTestBroadcast() {
+            const message = {
+                type: document.getElementById('messageType').value || 'Test',
+                sender: document.getElementById('messageSender').value || 'Test Client',
+                content: document.getElementById('messageContent').value || 'Test message',
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                const response = await fetch(`${apiBaseUrl}/ws/test-broadcast`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(message)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    addMessage('sent', `Broadcast sent: ${JSON.stringify(message, null, 2)}`);
+                    alert('Broadcast sent! Check all connected clients.');
+                } else {
+                    addMessage('error', `Failed to send broadcast: ${result.message || 'Unknown error'}`);
+                }
+            } catch (error) {
+                addMessage('error', `Error sending broadcast: ${error.message}`);
+                alert('Failed to send broadcast. Make sure the API is running and accessible.');
+            }
+        }
+
+        function clearMessages() {
+            document.getElementById('messages').innerHTML = '';
+        }
+
+        // Auto-connect on page load (optional - comment out if you don't want this)
+        // window.addEventListener('load', () => {
+        //     setTimeout(connect, 1000);
+        // });
+    </script>
+</body>
+</html>
