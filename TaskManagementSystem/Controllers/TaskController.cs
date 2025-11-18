@@ -11,6 +11,7 @@ using Serilog;
 using TaskManagementSystem.Features.Tasks.Queries;
 using TaskManagementSystem.Service;
 using Microsoft.AspNetCore.RateLimiting;
+using TaskManagementSystem.Repository.IRepository;
 
 namespace TaskManagementSystem.Controllers
 {
@@ -21,12 +22,15 @@ namespace TaskManagementSystem.Controllers
         private readonly ITaskService _taskService;
         private readonly IMediator _mediator;
         private readonly IWebSocketService _webSocketService;
+        private readonly INotificationRepository _notificationRepository;
 
-        public TaskController(ITaskService taskService, IMediator mediator, IWebSocketService webSocketService)
+        public TaskController(ITaskService taskService, IMediator mediator, IWebSocketService webSocketService,
+            INotificationRepository notificationRepository)
         {
             _taskService = taskService;
             _mediator = mediator;
             _webSocketService = webSocketService;
+            _notificationRepository = notificationRepository;
         }
         [Authorize(Roles = "Admin,Manager,Employee")]
         [HttpGet("tasks")]
@@ -134,6 +138,14 @@ namespace TaskManagementSystem.Controllers
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 _taskService.UpdateStatus(userId, taskId, statusId);
                 await _webSocketService.NotifyClientsAsync("Task updated successfully.");
+                var notification = new Notification
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    UserId = userId,
+                    Title = "Task Status Updated",
+                    Message = $"Task {taskId} status changed to {statusId}"
+                };
+                _notificationRepository.Add(notification);
                 return Ok(new
                 {
                     Status = true,
