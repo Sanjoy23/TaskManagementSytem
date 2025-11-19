@@ -18,6 +18,8 @@ namespace TaskManagementSystem.Features.Tasks.Handlers
         public async Task<TaskResponse> Handle(GetTaskByIdQuery request, CancellationToken cancellationToken)
         {
             var result = await _taskService.GetById(request.TaskId);
+            if (result == null)
+                throw new Exception($"Task with ID {request.TaskId} not found");
             return new TaskResponse
             {
                 Id = result.Id,
