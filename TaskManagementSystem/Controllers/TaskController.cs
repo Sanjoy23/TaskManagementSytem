@@ -66,7 +66,8 @@ namespace TaskManagementSystem.Controllers
         [HttpGet("task/{id}")]
         public async Task<IActionResult> GetTaskById(string id)
         {
-            var task = await _mediator.Send(id);
+            var query = new GetTaskByIdQuery(id);
+            var task = await _mediator.Send(query);
             if (task == null)
             {
                 return NotFound(new { Status = false, Message = "Task not found" });
