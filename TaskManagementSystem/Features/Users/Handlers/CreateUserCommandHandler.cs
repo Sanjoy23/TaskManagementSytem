@@ -30,8 +30,7 @@ namespace TaskManagementSystem.Features.Users.Handlers
             {
                 Id = Guid.NewGuid().ToString(),
                 FullName = request.FullName,
-                Email = request.Email,
-                RoleId = request.RoleId
+                Email = request.Email
 
             };
             var passwordHasher = new PasswordHasher<User>();

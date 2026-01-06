@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using MediatR;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using TaskManagementSystem.Features.Users.Commands;
 using TaskManagementSystem.Models;
 using TaskManagementSystem.Service.IService;
 
@@ -17,11 +17,13 @@ namespace TaskManagementSystem.Controllers
     {
         private readonly IUserService _userService;
         private readonly IConfiguration _configuration;
+        private readonly IMediator _mediator;
 
-        public AccountController(IUserService userService, IConfiguration configuration)
+        public AccountController(IUserService userService, IMediator mediator, IConfiguration configuration)
         {
             _userService = userService;
             _configuration = configuration;
+            _mediator = mediator;
         }
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
@@ -37,6 +39,13 @@ namespace TaskManagementSystem.Controllers
 
             var token = GenerateJwtToken(user);
             return Ok(new { Token = token });
+        }
+
+        [HttpPost("Register")]
+        public async Task<IActionResult> Register([FromBody] CreateUserCommand registerRequest)
+        {
+            var  result = await _mediator.Send(registerRequest);
+            return Ok(result);
         }
 
         private string GenerateJwtToken(User user)
