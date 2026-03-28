@@ -1,5 +1,6 @@
-﻿using Bogus;
+using Bogus;
 using EFCore.BulkExtensions;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using TaskManagementSystem.Models;
 
@@ -56,6 +57,9 @@ namespace TaskManagementSystem.Data
                 var users = userFaker.Generate(usersCount);
                 await _context.BulkInsertAsync(users);
             }
+
+            await EnsureDemoAdminAsync();
+
             var usersList = await _context.Users.ToListAsync();
 
             // --- Statuses ---
@@ -95,5 +99,40 @@ namespace TaskManagementSystem.Data
             }
         }
 
+        /// <summary>
+        /// Ensures a known demo account exists with a password hash compatible with <see cref="Microsoft.AspNetCore.Identity.PasswordHasher{TUser}"/> (login API).
+        /// Bulk-generated users use plain Bogus passwords and cannot be used to sign in.
+        /// </summary>
+        private async Task EnsureDemoAdminAsync()
+        {
+            const string demoEmail = "admin@demo.com";
+            var alreadyExists = await _context.Users.AnyAsync(u => u.Email.ToLower() == demoEmail);
+            if (alreadyExists)
+            {
+                return;
+            }
+
+            var adminRoleId = await _context.Roles
+                .Where(r => r.RoleName == "Admin")
+                .Select(r => r.Id)
+                .FirstOrDefaultAsync();
+
+            if (string.IsNullOrEmpty(adminRoleId))
+            {
+                return;
+            }
+
+            var user = new User
+            {
+                Id = Guid.NewGuid().ToString(),
+                FullName = "Demo Administrator",
+                Email = demoEmail,
+                RoleId = adminRoleId
+            };
+            var hasher = new PasswordHasher<User>();
+            user.Password = hasher.HashPassword(user, "Admin123!");
+            await _context.Users.AddAsync(user);
+            await _context.SaveChangesAsync();
+        }
     }
 }

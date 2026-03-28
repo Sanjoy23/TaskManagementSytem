@@ -41,6 +41,12 @@ builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddSingleton<IWebSocketService, WebSocketService>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("Redis");
+    options.InstanceName = "TaskManagementCache_";
+});
+
 // Configure Fluent Validation
 builder.Services.AddFluentValidationAutoValidation()
     .AddFluentValidationClientsideAdapters()

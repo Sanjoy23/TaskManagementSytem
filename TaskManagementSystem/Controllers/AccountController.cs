@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -29,10 +29,14 @@ namespace TaskManagementSystem.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
         {
             var user = await _userService.GetUserByEmailAsync(loginRequest.Email);
+            if (user == null)
+            {
+                return Unauthorized(new { Message = "Invalid credentials" });
+            }
+
             var passwordHasher = new PasswordHasher<User>();
             var result = passwordHasher.VerifyHashedPassword(user, user.Password, loginRequest.Password);
-
-            if (user == null || result == PasswordVerificationResult.Failed)
+            if (result == PasswordVerificationResult.Failed)
             {
                 return Unauthorized(new { Message = "Invalid credentials" });
             }
@@ -51,9 +55,6 @@ namespace TaskManagementSystem.Controllers
         private string GenerateJwtToken(User user)
         {
             var jwtSettings = _configuration.GetSection("JwtSettings");
-
-            var users =  _userService.GetUserByEmailAsync(user.Email);
-    
 
             var claims = new List<Claim>
             {

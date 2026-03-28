@@ -12,6 +12,9 @@ using TaskManagementSystem.Features.Tasks.Queries;
 using TaskManagementSystem.Service;
 using Microsoft.AspNetCore.RateLimiting;
 using TaskManagementSystem.Repository.IRepository;
+using Microsoft.Extensions.Caching.Distributed;
+using System.Text.Json;
+using TaskManagementSystem.Models.ResponseDtos;
 
 namespace TaskManagementSystem.Controllers
 {
@@ -23,19 +26,32 @@ namespace TaskManagementSystem.Controllers
         private readonly IMediator _mediator;
         private readonly IWebSocketService _webSocketService;
         private readonly INotificationRepository _notificationRepository;
+        private readonly IDistributedCache _cache;
 
         public TaskController(ITaskService taskService, IMediator mediator, IWebSocketService webSocketService,
-            INotificationRepository notificationRepository)
+            INotificationRepository notificationRepository, IDistributedCache cache)
         {
             _taskService = taskService;
             _mediator = mediator;
             _webSocketService = webSocketService;
             _notificationRepository = notificationRepository;
+            _cache = cache;
         }
         [Authorize(Roles = "Admin,Manager,Employee")]
         [HttpGet("tasks")]
         public async Task<IActionResult> GetAll([FromQuery] TaskFilterParameters filterParams)
         {
+            var cachedData = await _cache.GetStringAsync("AllTasks");
+            if(cachedData != null)
+            {
+               var products = JsonSerializer.Deserialize<List<TaskResponse>>(cachedData);
+                return Ok(new
+                {
+                    Status = true,
+                    Message = "Tasks retrieved successfully (from cache)",
+                    Result = products
+                });
+            }
             var result = await _mediator.Send(new GetAllTasksQuery(filterParams));
 
             return Ok(new

@@ -1,5 +1,3 @@
-﻿version: '3.8'
-
 services:
   webapi:
     build: .
@@ -9,11 +7,13 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Server=db;Database=TaskManagementDb;User=sa;Password=YourPassword123!;TrustServerCertificate=true
+      # Quote so `!` in the password is not parsed as a YAML tag (otherwise this env var is dropped and the app falls back to LocalDB).
+      - "ConnectionStrings__DefaultConnection=Server=db;Database=TaskManagementDb;User=sa;Password=YourPassword123!;TrustServerCertificate=true"
       - JwtSettings__Issuer=http://localhost:5000
       - JwtSettings__Audience=http://localhost:5000
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - webapi-network
 
@@ -23,12 +23,18 @@ services:
     container_name: dotnet-db
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=YourPassword123!
+      - "SA_PASSWORD=YourPassword123!"
       - MSSQL_PID=Express
     ports:
       - "1433:1433"
     volumes:
       - db_data:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$${SA_PASSWORD}" -Q "SELECT 1" -b -o /dev/null || exit 1
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
     networks:
       - webapi-network
 

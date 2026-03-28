@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 using TaskManagementSystem.Data;
 using TaskManagementSystem.Models;
@@ -16,9 +16,10 @@ namespace TaskManagementSystem.Repository
 
         public async Task<User> GetByEmailAsync(string email)
         {
+            var normalized = email.Trim().ToLowerInvariant();
             var user = await _context.Users
                 .Include(x => x.Role)
-                         .FirstOrDefaultAsync(u => u.Email == email);
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == normalized);
             if (user == null) {
                 return null;
             }
