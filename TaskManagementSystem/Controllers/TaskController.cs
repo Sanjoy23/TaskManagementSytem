@@ -1,20 +1,21 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Linq.Expressions;
-using TaskManagementSystem.Features.Tasks.Commands;
-using TaskManagementSystem.Models.DTOs;
-using TaskManagementSystem.Models;
-using TaskManagementSystem.Service.IService;
-using System.Security.Claims;
-using Serilog;
-using TaskManagementSystem.Features.Tasks.Queries;
-using TaskManagementSystem.Service;
 using Microsoft.AspNetCore.RateLimiting;
-using TaskManagementSystem.Repository.IRepository;
 using Microsoft.Extensions.Caching.Distributed;
+using Serilog;
+using System.Linq.Expressions;
+using System.Security.Claims;
 using System.Text.Json;
+using TaskManagementSystem.Features.Tasks.Commands;
+using TaskManagementSystem.Features.Tasks.Queries;
+using TaskManagementSystem.Models;
+using TaskManagementSystem.Models.DTOs;
 using TaskManagementSystem.Models.ResponseDtos;
+using TaskManagementSystem.Repository.IRepository;
+using TaskManagementSystem.Service;
+using TaskManagementSystem.Service.IService;
+using TaskManagementSystem.Utilities;
 
 namespace TaskManagementSystem.Controllers
 {
@@ -41,22 +42,18 @@ namespace TaskManagementSystem.Controllers
         [HttpGet("tasks")]
         public async Task<IActionResult> GetAll([FromQuery] TaskFilterParameters filterParams)
         {
-            var cachedData = await _cache.GetStringAsync("AllTasks");
+            var cachedData = await _cache.GetRecordAsync<List<TaskResponse>>("AllTasks");
             if(cachedData != null)
             {
-               var products = JsonSerializer.Deserialize<List<TaskResponse>>(cachedData);
                 return Ok(new
                 {
                     Status = true,
                     Message = "Tasks retrieved successfully (from cache)",
-                    Result = products
+                    Result = cachedData
                 });
             }
             var result = await _mediator.Send(new GetAllTasksQuery(filterParams));
-            await _cache.SetStringAsync("AllTasks", JsonSerializer.Serialize(result.Data), new DistributedCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
-            });
+            await _cache.SetRecordAsync("AllTasks", result.Data, TimeSpan.FromMinutes(5));
             return Ok(new
             {
                 Status = true,
