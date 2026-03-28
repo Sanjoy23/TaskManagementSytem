@@ -53,7 +53,10 @@ namespace TaskManagementSystem.Controllers
                 });
             }
             var result = await _mediator.Send(new GetAllTasksQuery(filterParams));
-
+            await _cache.SetStringAsync("AllTasks", JsonSerializer.Serialize(result.Data), new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+            });
             return Ok(new
             {
                 Status = true,
