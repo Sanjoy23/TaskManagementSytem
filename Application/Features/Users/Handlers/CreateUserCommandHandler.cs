@@ -1,0 +1,47 @@
+﻿using Application.Features.Users.Commands;
+using Domain.Entities;
+using Domain.Interface;
+using MediatR;
+using Microsoft.AspNetCore.Identity;
+
+
+namespace Application.Features.Users.Handlers
+{
+    public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, CreateUserResponse>
+    {
+        private readonly IUserRepository _userRepository;
+
+        public CreateUserCommandHandler(IUserRepository userRepository)
+        {
+            _userRepository = userRepository;
+        }
+
+        public async Task<CreateUserResponse> Handle(CreateUserCommand request, CancellationToken cancellationToken)
+        {
+            var userExist = await _userRepository.GetByEmailAsync(request.Email);
+            if (userExist != null)
+            {
+                return new CreateUserResponse
+                {
+                    Status = false,
+                    Message = "User Already Exist"
+                };
+            }
+            var user = new User
+            {
+                Id = Guid.NewGuid().ToString(),
+                FullName = request.FullName,
+                Email = request.Email
+
+            };
+            var passwordHasher = new PasswordHasher<User>();
+            user.Password = passwordHasher.HashPassword(user, request.Password);
+            _userRepository.Add(user);
+            return new CreateUserResponse
+            {
+                Status = true,
+                Message = "User Created successfully."
+            };
+        }
+    }
+}

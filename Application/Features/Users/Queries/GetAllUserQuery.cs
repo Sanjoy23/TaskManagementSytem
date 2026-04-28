@@ -1,0 +1,16 @@
+﻿using Application.Models;
+using MediatR;
+
+namespace Application.Features.Users.Queries
+{
+    public class GetAllUserQuery: IRequest<GetAllUserRespnse>
+    {
+    }
+
+    public class GetAllUserRespnse
+    {
+        public bool Status { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public List<UserDto>? Users { get; set; }
+    }
+}

@@ -1,6 +1,7 @@
 using Bogus;
 using Domain.Entities;
 using EFCore.BulkExtensions;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastruture.Data
