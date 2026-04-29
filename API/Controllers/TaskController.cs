@@ -34,8 +34,8 @@ namespace API.Controllers
             _cache = cache;
         }
         [Authorize(Roles = "Admin,Manager,Employee")]
-        [HttpGet("tasks")]
-        public async Task<IActionResult> GetAll([FromQuery] TaskFilterParameters filterParams)
+        [HttpGet("Tasks")]
+        public async Task<IActionResult> getTasks([FromQuery] TaskFilterParameters filterParams)
         {
             var cachedData = await _cache.GetRecordAsync<List<TaskResponse>>("AllTasks");
             if(cachedData != null)
@@ -59,8 +59,8 @@ namespace API.Controllers
 
 
         [Authorize(Roles = "Admin,Manager,Employee")]
-        [HttpGet("task/{id}")]
-        public async Task<IActionResult> GetTaskById(string id)
+        [HttpGet("{id}")]
+        public async Task<IActionResult> getTasks(string id)
         {
             var query = new GetTaskByIdQuery(id);
             var task = await _mediator.Send(query);
@@ -77,8 +77,8 @@ namespace API.Controllers
         }
         [EnableRateLimiting("FixedPolicey")] // added rate limiter at specific endpoints.
         [Authorize(Roles = "Manager,Admin")]
-        [HttpPost("task")]
-        public async Task<IActionResult> CreateTask([FromBody] CreateTaskCommand command)
+        [HttpPost("Task")]
+        public async Task<IActionResult> Tasks([FromBody] CreateTaskCommand command)
         {
             var result = await _mediator.Send(command);
 
@@ -93,8 +93,8 @@ namespace API.Controllers
         }
 
         [Authorize(Roles = "Manager,Admin")]
-        [HttpPut("task/{id}")]
-        public async Task<IActionResult> UpdateTask(string id, [FromBody] UpdateTaskCommand model)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Tasks(string id, [FromBody] UpdateTaskCommand model)
         {
             if (model.Id != id.ToString())
             {
@@ -111,8 +111,8 @@ namespace API.Controllers
             }
         }
         [Authorize(Roles = "Admin")]
-        [HttpDelete("task/{id}")]
-        public async Task<IActionResult> DeleteTask(string id)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Tasks(string id)
         {
             var result = await _mediator.Send(new DeleteTaskCommand { TaskId = id });
 
@@ -128,7 +128,7 @@ namespace API.Controllers
         }
         [Authorize(Roles = "Employee")]
         [HttpPut("status/")]
-        public async Task<IActionResult> UpdateStatus(string taskId, string statusId)
+        public async Task<IActionResult> Status(string taskId, string statusId)
         {
             try
             {

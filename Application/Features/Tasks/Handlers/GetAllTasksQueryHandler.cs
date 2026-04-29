@@ -7,6 +7,7 @@ namespace Application.Features
 {
     public class GetAllTasksQueryHandler : IRequestHandler<GetAllTasksQuery, PagedResult<TaskResponse>>
     {
+        private readonly ITaskRepository _taskRepository;
 
         public GetAllTasksQueryHandler(ITaskRepository taskRepository)
         {
@@ -17,7 +18,7 @@ namespace Application.Features
         {
 
 
-            var tasks = _taskRepository.(request.FilterParams);
+            var tasks = _taskRepository.GetAll(request.FilterParams);
 
             return await tasks;
         }

@@ -1,21 +1,22 @@
-﻿using MediatR;
+﻿using Domain.Interface;
+using MediatR;
 
 namespace Application.Features
 {
     public class DeleteTaskCommandHandler : IRequestHandler<DeleteTaskCommand, DeleteTaskResult>
     {
-        private readonly ITaskService _taskService;
+        private readonly ITeamRepository _teamRepository;
 
-        public DeleteTaskCommandHandler(ITaskService taskService)
+        public DeleteTaskCommandHandler(ITeamRepository taskRepository)
         {
-            _taskService = taskService;
+            _teamRepository = taskRepository;
         }
 
         public async Task<DeleteTaskResult> Handle(DeleteTaskCommand request, CancellationToken cancellationToken)
         {
             try
             {
-                var existingTask = await _taskService.GetById(request.TaskId);
+                var existingTask = await _teamRepository.GetById(request.TaskId);
                 if (existingTask == null)
                 {
                     return new DeleteTaskResult
@@ -25,7 +26,7 @@ namespace Application.Features
                     };
                 }
 
-                _taskService.Delete(existingTask);
+                _teamRepository.Delete(existingTask);
 
                 return new DeleteTaskResult
                 {
@@ -35,7 +36,7 @@ namespace Application.Features
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                //Log.Error(ex, ex.Message);
                 return new DeleteTaskResult
                 {
                     Status = false,

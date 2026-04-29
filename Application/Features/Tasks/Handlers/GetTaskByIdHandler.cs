@@ -1,20 +1,21 @@
 ﻿using Application.Models;
+using Domain.Interface;
 using MediatR;
 
 namespace Application.Features
 {
     public class GetTaskByIdHandler : IRequestHandler<GetTaskByIdQuery, TaskResponse>
     {
-        private readonly ITaskService _taskService;
+        private readonly ITaskRepository _taskRepository;
 
-        public GetTaskByIdHandler(ITaskService taskService)
+        public GetTaskByIdHandler(ITaskRepository taskRepository)
         {
-            _taskService = taskService;
+            _taskRepository = taskRepository;
         }
 
         public async Task<TaskResponse> Handle(GetTaskByIdQuery request, CancellationToken cancellationToken)
         {
-            var result = await _taskService.GetById(request.TaskId);
+            var result = await _taskRepository.GetById(request.TaskId);
             if (result == null)
                 throw new Exception($"Task with ID {request.TaskId} not found");
             return new TaskResponse

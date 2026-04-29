@@ -1,22 +1,24 @@
 ﻿using Application.Models;
+using Domain.Entities;
+using Domain.Interface;
 using MediatR;
 
 namespace Application.Features
 {
     public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, UpdateTaskResult>
     {
-        private readonly ITaskService _taskService;
+        private readonly ITaskRepository _taskRepository;
 
-        public UpdateTaskCommandHandler(ITaskService taskService)
+        public UpdateTaskCommandHandler(ITaskRepository taskRepository)
         {
-            _taskService = taskService;
+            _taskRepository = taskRepository;
         }
 
         public Task<UpdateTaskResult> Handle(UpdateTaskCommand request, CancellationToken cancellationToken)
         {
             try
             {
-                var taskUpdateRequestDto = new TaskUpdateRequestDto
+                var taskEntity = new TaskEntity
                 {
                     Id = request.Id,
                     Title = request.Title,
@@ -27,7 +29,7 @@ namespace Application.Features
                     TeamId = request.TeamId,
                     DueDate = request.DueDate,
                 };
-                _taskService.Update(taskUpdateRequestDto);
+                _taskRepository.Update(taskEntity);
                 return Task.FromResult(new UpdateTaskResult
                 {
                     Status = true,
@@ -36,7 +38,7 @@ namespace Application.Features
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                //Log.Error(ex, ex.Message);
                 return Task.FromResult(new UpdateTaskResult
                 {
                     Status = false,
