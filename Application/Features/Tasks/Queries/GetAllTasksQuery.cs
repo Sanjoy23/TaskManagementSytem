@@ -1,14 +1,15 @@
 ﻿using Application.Models;
+using Domain.Specifications.Tasks;
 using MediatR;
 
 namespace Application.Features
 {
-    public class GetAllTasksQuery : IRequest<PagedResult<TaskResponse>>
+    public class GetAllTasksQuery : IRequest<Pagination<TaskResponse>>
     {
-        public TaskFilterParameters FilterParams { get; set; }
-        public GetAllTasksQuery(TaskFilterParameters filterParams)
+        public TaskSpecParams FilterParams { get; set; }
+        public GetAllTasksQuery(TaskSpecParams taskParams)
         {
-            FilterParams = filterParams;
+            FilterParams = taskParams;
         }
     }
 }

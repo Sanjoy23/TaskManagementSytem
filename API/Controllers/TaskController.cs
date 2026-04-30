@@ -4,6 +4,7 @@ using Application.Features;
 using Application.Models;
 using Domain.Entities;
 using Domain.Interface;
+using Domain.Specifications.Tasks;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -35,7 +36,7 @@ namespace API.Controllers
         }
         [Authorize(Roles = "Admin,Manager,Employee")]
         [HttpGet("Tasks")]
-        public async Task<IActionResult> getTasks([FromQuery] TaskFilterParameters filterParams)
+        public async Task<IActionResult> getTasks([FromQuery] TaskSpecParams taskParams)
         {
             var cachedData = await _cache.GetRecordAsync<List<TaskResponse>>("AllTasks");
             if(cachedData != null)
@@ -47,7 +48,7 @@ namespace API.Controllers
                     Result = cachedData
                 });
             }
-            var result = await _mediator.Send(new GetAllTasksQuery(filterParams));
+            var result = await _mediator.Send(new GetAllTasksQuery(taskParams));
             await _cache.SetRecordAsync("AllTasks", result.Data, TimeSpan.FromMinutes(5));
             return Ok(new
             {

@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using Domain.Interfaces;
+using System.Linq.Expressions;
 
 namespace Domain.Interface
 {
@@ -11,5 +12,7 @@ namespace Domain.Interface
         void Add(T entity);
         void Update(T entity);
         void Delete(T entity);
+
+        Task<IReadOnlyList<T>> GetAsync(ISpecification<T> spec);
     }
 }

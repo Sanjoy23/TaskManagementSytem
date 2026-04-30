@@ -1,4 +1,6 @@
 ﻿using Domain.Interface;
+using Domain.Interfaces;
+using Infrastructure.Data;
 using Infrastruture.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -97,6 +99,16 @@ namespace Infrastruture.Repository
                 }
             }
             return query.FirstOrDefault();
+        }
+
+        public async Task<IReadOnlyList<T>> GetAsync(ISpecification<T> spec)
+        {
+            return await ApplySpecification(spec).ToListAsync();
+        }
+
+        private IQueryable<T> ApplySpecification(ISpecification<T> spec)
+        {
+            return SpecificationEvaluator<T>.GetQuery(_dbSet.AsQueryable(), spec);
         }
     }
 }
